@@ -18,15 +18,16 @@ const server = http.createServer(async(req, res) => {
                 req.on('error', (error) => reject(error));
             });
         }
-        if (!(url.startsWith('https:')||url.startsWith('http:'))){ // fwd to handler.js
+        if (!(url.startsWith('https:')||url.startsWith('http:'))){
           var referer=reqHeaders.referer;
           if (referer && referer.startsWith(`http://${reqHOST}`)) {
             url = `${referer}${url}`
           }
         }
-        if (!(url.startsWith('https:')||url.startsWith('http:'))){ // fwd to handler.js
+        if (!(url.startsWith('https:')||url.startsWith('http:'))){
           return await require('./'+(argo.app||'default'))({req,res,url,body})
         }
+        console.log('todo',url)
         var { data, headers, statusCode, options } = await myfetch(url, {
             method: req.method, headers: reqHeaders, body
         });

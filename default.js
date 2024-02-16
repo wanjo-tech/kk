@@ -3,7 +3,7 @@ module.exports = async (opts)=>{
   var {o2s,s2o,tryx,myfetch,fs,date,now} = require('./myes')
   var {req,res,url,body}=opts;
 
-  if (!body) body = url
+  if (!body) body = decodeURI(url)
   if (!body){
     console.log('nobody',url)
     res.writeHead(404, {});
