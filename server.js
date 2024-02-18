@@ -18,16 +18,21 @@ const server = http.createServer(async(req, res) => {
                 req.on('error', (error) => reject(error));
             });
         }
+
+        //TODO 
+        //if (!(url.startsWith('https:')||url.startsWith('http:'))){
+        //  var referer=reqHeaders.referer;
+        //  if (referer && referer.startsWith(`http://${reqHOST}`)) {
+        //    //if (url=='favicon.ico') throw 'favicon' //TMP SOL
+        //    url = `${referer}${url}`
+        //  }
+        //}
+
         if (!(url.startsWith('https:')||url.startsWith('http:'))){
-          var referer=reqHeaders.referer;
-          if (referer && referer.startsWith(`http://${reqHOST}`)) {
-            url = `${referer}${url}`
-          }
-        }
-        if (!(url.startsWith('https:')||url.startsWith('http:'))){
+          if (!body) body = decodeURI(url)
           return await require('./'+(argo.app||'default'))({req,res,url,body})
         }
-        console.log('todo',url)
+        //console.log('debug',{url,body,referer:reqHeaders.referer})
         var { data, headers, statusCode, options } = await myfetch(url, {
             method: req.method, headers: reqHeaders, body
         });
@@ -46,6 +51,7 @@ const server = http.createServer(async(req, res) => {
           headers['set-cookie'] = headers_set_cookie
         }
         console.log(statusCode,url)
+        if (statusCode=='431') statusCode=500;//
         res.writeHead(statusCode, headers);
         res.end(data);
     } catch (error) {
