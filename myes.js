@@ -53,10 +53,10 @@ function myfetch(url, options={}) {
         throw 'WRONGURL'
     }
     var referer = options.headers['referer'] = url;// `https://${parsedUrl.host||''}/`;
-    const protocol = url.startsWith('https://') ? https : http;
+    const webModule = url.startsWith('https://') ? https : http;
 
     return new Promise((resolve, reject) => {
-        const req = protocol.request(url, options, (response) => {
+        const req = webModule.request(url, options, (response) => {
             const encoding = response.headers['content-encoding'];
             const stream = decompress(response, encoding);
             let data = [];
@@ -71,7 +71,7 @@ function myfetch(url, options={}) {
         req.end();
     });
 }
-module.exports = { argv2o, tryx, s2o, o2s, myResponse,tryp, myfetch, http, https, sleep_async,fs,nothing,date,now,
+module.exports = { argv2o, tryx, s2o, o2s, myResponse,tryp, myfetch, http, https, urlModule, sleep_async,fs,nothing,date,now,
 
 		//@ref https://cnodejs.org/topic/504061d7fef591855112bab5
 		md5: (s) => require('crypto').createHash('md5').update(s).digest('hex'),

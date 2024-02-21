@@ -1,7 +1,8 @@
 //TINY HTTP API SERVER FOR INNER USE
 //e.g. node server /app=default /port=8000
-const { argv2o, tryx, s2o, o2s, tryp, myfetch, http} = require('./myes')
+const { argv2o, tryx, s2o, o2s, tryp, myfetch, http, urlModule} = require('./myes')
 const argo = argv2o();
+const app_o = {}//buffer for app
 const server = http.createServer(async(req, res) => {
     var url,headers,statuscode,body;
     try {
@@ -30,11 +31,19 @@ const server = http.createServer(async(req, res) => {
 
         if (!(url.startsWith('https:')||url.startsWith('http:'))){
           if (!body) body = decodeURI(url)
-          return await require('./'+(argo.app||'default'))({req,res,url,body})
+          var app_id = (argo.app||'default')
+          if (!app_o[app_id]) app_o[app_id] = require('./'+app_id)
+          app = app_o[app_id]
+          return await app({req,res,url,body})
         }
         //console.log('debug',{url,body,referer:reqHeaders.referer})
+        var agent;
+        //e.g. /proxy=http://127.0.0.1:7777
+        if (argo.proxy) { //TO FIX
+          agent = new (require('https-proxy-agent').HttpsProxyAgent)(urlModule.parse(argo.proxy))
+        }
         var { data, headers, statusCode, options } = await myfetch(url, {
-            method: req.method, headers: reqHeaders, body
+            method: req.method, headers: reqHeaders, body, agent
         });
         var location = headers['location']
         if (location) {
