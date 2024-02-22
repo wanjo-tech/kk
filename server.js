@@ -2,7 +2,6 @@
 //e.g. node server /app=default /port=8000
 const { argv2o, tryx, s2o, o2s, tryp, myfetch, http, urlModule} = require('./myes')
 const argo = argv2o();
-const app_o = {}//buffer for app
 const server = http.createServer(async(req, res) => {
     var url,headers,statuscode,body;
     try {
@@ -20,7 +19,7 @@ const server = http.createServer(async(req, res) => {
             });
         }
 
-        //TODO 
+        //TODO some case that ref by page...
         //if (!(url.startsWith('https:')||url.startsWith('http:'))){
         //  var referer=reqHeaders.referer;
         //  if (referer && referer.startsWith(`http://${reqHOST}`)) {
@@ -32,9 +31,8 @@ const server = http.createServer(async(req, res) => {
         if (!(url.startsWith('https:')||url.startsWith('http:'))){
           if (!body) body = decodeURI(url)
           var app_id = (argo.app||'default')
-          if (!app_o[app_id]) app_o[app_id] = require('./'+app_id)
-          app = app_o[app_id]
-          return await app({req,res,url,body})
+          app = require('./'+app_id)
+          return await app({req,res,url,body,argo,app_id})
         }
         //console.log('debug',{url,body,referer:reqHeaders.referer})
         var agent;
