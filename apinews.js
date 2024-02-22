@@ -53,7 +53,7 @@ var ywcq_news_headlines_a = async()=>{
     });
     return rt
 }
-// e.g. curl -X POST http://127.0.0.1 -d "ywcq_news_headlines_a()"
+// e.g. curl -X POST http://127.0.0.1 -d "news.ywcq_news_headlines_a()"
 
 module.exports = {
     init_time,
