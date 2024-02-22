@@ -30,6 +30,7 @@ module.exports = async (opts)=>{
     reload:(m='aiwin')=>(typeof tryRequire('./'+m,true)),
     //favicon:{ico:''},
     tool:tryRequire('./apitool'),
+    news:tryRequire('./apinews'),
 
   })
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
