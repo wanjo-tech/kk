@@ -1,15 +1,17 @@
+var {o2s,s2o,tryx,myfetch,fs,date,now,md5,md5_ascii,tryRequire} = require('./myes')
+var init_time = now()
 module.exports = async (opts)=>{
+  var {req,res,url,body,argo,app_id}=opts;
 
-	var {o2s,s2o,tryx,myfetch,fs,date,now} = require('./myes')
-	var {req,res,url,body}=opts;
-
-	if (!body){
-		console.log('nobody',url)
-		res.writeHead(404, {});
-		res.end(o2s({code:404,msg:url}))
-		return
-	}
-	console.log('body=>',body)
+  //if (!body) body = url // let url became body,e.g. https://localhost:50080/2**3
+  if (!body){
+    //console.log('nobody',url)
+    //res.writeHead(404, {});
+    res.end(o2s({code:404,msg:url}))
+    return
+  }
+  console.log('body=>',body)
+  if ('favicon.ico'==body) throw 'favicon'
 	//////////////////////////
 	var User_Agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.20 Safari/537.36'
 	var api_entry = 'https://www.invest'+'ing.com'
