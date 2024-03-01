@@ -1,11 +1,17 @@
 //TINY HTTP API SERVER FOR INNER USE
-//e.g. node server /app=default /port=8000
-const { argv2o, tryx, s2o, o2s, tryp, myfetch, http, urlModule} = require('./myes')
+// fwd + app
+
+//usage e.g.
+//node server /app=default /port=8000 /fwd=1
+
+const { argv2o, tryx, s2o, o2s, tryp, myfetch, http, urlModule, zlib} = require('./myes')
 const argo = argv2o();
 const server = http.createServer(async(req, res) => {
-    var url,headers,statuscode,body;
     try {
+        var url,headers,statuscode,body;
         const reqHeaders = req.headers;
+        const acceptEncoding = reqHeaders['accept-encoding'];
+        const hasGzip = acceptEncoding && acceptEncoding.includes('gzip');
         const reqHOST = reqHeaders['host'] || 'localhost';
         if (argo.token && argo.token!=reqHeaders['dkktoken']) throw `TOKEN`
         const dkkHost = reqHeaders['dkkhost'];
@@ -19,25 +25,28 @@ const server = http.createServer(async(req, res) => {
             });
         }
 
-        //TODO some case that ref by page...
-        //if (!(url.startsWith('https:')||url.startsWith('http:'))){
-        //  var referer=reqHeaders.referer;
-        //  if (referer && referer.startsWith(`http://${reqHOST}`)) {
-        //    //if (url=='favicon.ico') throw 'favicon' //TMP SOL
-        //    url = `${referer}${url}`
-        //  }
-        //}
+        //TODO not fix the bugs...
+        var referer=reqHeaders.referer;
+        if (!(url.startsWith('https:')||url.startsWith('http:')) && referer){
+          var referer_o = urlModule.parse(referer)
+          var referer_path = referer_o.path
+          if (referer_path.startsWith('/http') && referer_o.host!=reqHOST){
+            //url = `${referer_path.substring(1)}/${url}`
+            url = `${referer_path.substring(1)}${url}`
+            reqHeaders['referer']=referer_path
+          }
+        }
 
         if (!(url.startsWith('https:')||url.startsWith('http:'))){
-          if (!body) body = decodeURI(url)
+          //if (!body) body = decodeURI(url)
+          if (!body) body = decodeURI(urlModule.parse(url).query) // parse(url).pathname => kinda config
           var app_id = (argo.app||'default')
           app = require('./'+app_id)
           return await app({req,res,url,body,argo,app_id})
         }
-        //console.log('debug',{url,body,referer:reqHeaders.referer})
+        if (!argo.fwd) throw 'fwd'
         var agent;
-        //e.g. /proxy=http://127.0.0.1:7777
-        if (argo.proxy) { //TO FIX
+        if (argo.proxy) {
           agent = new (require('https-proxy-agent').HttpsProxyAgent)(urlModule.parse(argo.proxy))
         }
         var { data, headers, statusCode, options } = await myfetch(url, {
@@ -58,14 +67,32 @@ const server = http.createServer(async(req, res) => {
           headers['set-cookie'] = headers_set_cookie
         }
         console.log(statusCode,url)
-        if (statusCode=='431') statusCode=500;//
-        res.writeHead(statusCode, headers);
-        res.end(data);
+        if (statusCode=='200' && hasGzip) {
+            zlib.gzip(data, (error, result) => {
+                if (error) {
+                    res.writeHead(500);
+                    res.end('Server Error GZIP');
+                    return;
+                }
+                headers['Content-Encoding']='gzip';
+                res.writeHead(statusCode, headers);
+                res.end(result);
+            });
+        } else {
+            res.writeHead(statusCode, headers);
+            res.end(data);
+        }
     } catch (error) {
         console.error('ERR',url,statusCode,headers,'=>',error);
-        //res.writeHead(500, { 'Content-Type': 'text/plain' });
         const msg = (''+error).split('\n')[0]; // Get the first line only
         const code = (error||{}).code
+        res.writeHead(200, {
+          'Content-Type':'application/json;charset=utf-8',
+          "Access-Control-Allow-Origin":"*",
+          "Access-Control-Allow-Methods":"POST, OPTIONS, GET, DELETE",
+          //"Access-Control-Allow-Headers":"Content-Type",
+          "Access-Control-Allow-Headers":"*",
+        });
         res.end(o2s({msg,code}));
     }
 });

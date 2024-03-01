@@ -76,8 +76,8 @@ function myfetch(url, options={}) {
         req.end();
     });
 }
-module.exports = { argv2o, tryx, s2o, o2s, myResponse,tryp, myfetch, http, https, urlModule, sleep_async,
-  fs, nothing, date, now, tryRequire,
+var module_exports = { argv2o, tryx, s2o, o2s, myResponse,tryp, myfetch, http, https, urlModule, sleep_async,
+  fs, nothing, date, now, tryRequire, zlib,
 
   //@ref https://cnodejs.org/topic/504061d7fef591855112bab5
   md5: (s) => require('crypto').createHash('md5').update(s).digest('hex'),
@@ -114,3 +114,6 @@ module.exports = { argv2o, tryx, s2o, o2s, myResponse,tryp, myfetch, http, https
   },
 }
 
+module.exports = module_exports
+//for cf worker..
+//export default module_exports;
