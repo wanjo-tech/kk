@@ -25,23 +25,15 @@ var api_entry = 'https://api.invest'+'ing.com'
 var agent
 if (argo.proxy) agent = new (require('https-proxy-agent').HttpsProxyAgent)(urlModule.parse(argo.proxy))
 
-//https://github.com/alvarobartt/investpy/issues/591 instruments/HistoricalDataAjax discontinued
-
+//NOTES: still CF-WAF will block from-time-to-time...
 var history_s = async(id,interval='PT15M',pointscount=160)=>{
+    if (!id) throw 'need id'
     var u = `${api_entry}/api/financialdata/${id}/historical/chart/?interval=${interval}&pointscount=${pointscount}`
-    console.log('history_s',u)
-    var {data,headers} = await myfetch(u,{
-      method:'GET',
-      agent,
-      headers:{'User-Agent':User_Agent,'Referer':api_entry}
-    })
-    cookieString = [(headers['set-cookie'] || []).join('; ')]
-    console.log('cookieString',cookieString)
-    return [data.toString(),headers]
+    var bizcdp = require('./bizcdp')
+    return await bizcdp({pattern:u,expression:`document.body.innerText`,reload:1234,debug:false})
 }
 var history_o = async(id,interval,pointscount)=>{
-  var [data] = await history_s(id,interval,pointscount)
-  return data
+  return s2o(await history_s(id,interval,pointscount))
 }
 
 var headlines_s = async()=>{
@@ -98,5 +90,6 @@ module.exports = {
     headline_a,
     latest_a,
 
+    history_s,
     history_o,
 }

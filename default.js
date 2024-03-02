@@ -47,8 +47,8 @@ module.exports = async (opts)=>{
   var myevalp = await require('./myevalp') //for internal.
   var rst = await myevalp(body,ctx)
   if (typeof rst == 'function') rst = await rst()
-  var data = o2s(rst)
-
+  var data = rst
+  if (typeof rst != 'string') data = o2s(rst)
   if (hasGzip) {
       headers['Content-Encoding']='gzip';
       data = await gzip2s(data)
