@@ -76,8 +76,14 @@ function myfetch(url, options={}) {
         req.end();
     });
 }
+var gzip2s = (s)=>new Promise((r,j)=>{
+  zlib.gzip(s, (error, result) => {
+      if (error) j('Server Error GZIP '+error)
+      else r(result)
+  });
+});
 var module_exports = { argv2o, tryx, s2o, o2s, myResponse,tryp, myfetch, http, https, urlModule, sleep_async,
-  fs, nothing, date, now, tryRequire, zlib,
+  fs, nothing, date, now, tryRequire, zlib, gzip2s,
 
   //@ref https://cnodejs.org/topic/504061d7fef591855112bab5
   md5: (s) => require('crypto').createHash('md5').update(s).digest('hex'),

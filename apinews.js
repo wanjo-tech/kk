@@ -3,7 +3,8 @@ var init_time = now()
 const argo = argv2o();
 
 var User_Agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.20 Safari/537.36'
-var api_entry = 'https://cn.invest'+'ing.com'
+var web_entry = 'https://cn.invest'+'ing.com'
+var api_entry = 'https://api.invest'+'ing.com'
 
 ///instruments/HistoricalDataAjax
 //{
@@ -19,24 +20,36 @@ var api_entry = 'https://cn.invest'+'ing.com'
 //    name: 'XAU/USD - Gold Spot US Dollar',
 //  },
 
+// 945629 BTC/USD
+
 var agent
 if (argo.proxy) agent = new (require('https-proxy-agent').HttpsProxyAgent)(urlModule.parse(argo.proxy))
 
-var history_s = async(body)=>{
-    var {data,headers} = await require('./myes').myfetch(`${api_entry}/instruments/HistoricalDataAjax`,{
-      method:'POST',
-      body,
+//https://github.com/alvarobartt/investpy/issues/591 instruments/HistoricalDataAjax discontinued
+
+var history_s = async(id,interval='PT15M',pointscount=160)=>{
+    var u = `${api_entry}/api/financialdata/${id}/historical/chart/?interval=${interval}&pointscount=${pointscount}`
+    console.log('history_s',u)
+    var {data,headers} = await myfetch(u,{
+      method:'GET',
       agent,
-      headers:{'User-Agent':User_Agent}
+      headers:{'User-Agent':User_Agent,'Referer':api_entry}
     })
+    cookieString = [(headers['set-cookie'] || []).join('; ')]
+    console.log('cookieString',cookieString)
     return [data.toString(),headers]
 }
+var history_o = async(id,interval,pointscount)=>{
+  var [data] = await history_s(id,interval,pointscount)
+  return data
+}
+
 var headlines_s = async()=>{
-    var {data,headers} = await require('./myes').myfetch(`${api_entry}/news/headlines`,{headers:{'User-Agent':User_Agent},agent})
+    var {data,headers} = await myfetch(`${web_entry}/news/headlines`,{headers:{'User-Agent':User_Agent},agent})
     return [data.toString(),headers]
 }
 var latest_s = async()=>{
-    var {data,headers} = await require('./myes').myfetch(`${api_entry}/news/latest-news`,{headers:{'User-Agent':User_Agent},agent})
+    var {data,headers} = await myfetch(`${web_entry}/news/latest-news`,{headers:{'User-Agent':User_Agent},agent})
     return [data.toString(),headers]
 }
 var headline_a = async()=>{
@@ -84,4 +97,6 @@ module.exports = {
 
     headline_a,
     latest_a,
+
+    history_o,
 }
