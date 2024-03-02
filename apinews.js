@@ -1,4 +1,4 @@
-var {o2s,s2o,tryx,myfetch,fs,date,now,md5,md5_ascii,urlModule,argv2o} = require('./myes')
+var {o2s,s2o,tryx,myfetch,fs,date,now,md5,md5_ascii,urlModule,argv2o,jPath,jPathAsync} = require('./myes')
 var init_time = now()
 const argo = argv2o();
 
@@ -26,15 +26,23 @@ var agent
 if (argo.proxy) agent = new (require('https-proxy-agent').HttpsProxyAgent)(urlModule.parse(argo.proxy))
 
 //NOTES: still CF-WAF will block from-time-to-time...
-var history_s = async(id,interval='PT15M',pointscount=160)=>{
+var history_s = async(id,interval='PT15M',pointscount=160,reload=1234)=>{
     if (!id) throw 'need id'
     var u = `${api_entry}/api/financialdata/${id}/historical/chart/?interval=${interval}&pointscount=${pointscount}`
     var bizcdp = require('./bizcdp')
     return await bizcdp({pattern:u,expression:`document.body.innerText`,reload:1234,debug:false})
 }
-var history_o = async(id,interval,pointscount)=>{
-  return s2o(await history_s(id,interval,pointscount))
+var history_o = async(id,interval,pointscount,reload=0)=>{
+  var rt = s2o(await history_s(id,interval,pointscount,reload))
+  return rt
 }
+
+//var history_o_s = async(id,interval,pointscount,reload=0)=>{
+//  var rt = await history_o(id,interval,pointscount,reload)
+//  var rt_o = rt.data
+//  console.log('debug history_o_s',rt_o)
+//  return rt_o
+//}
 
 var headlines_s = async()=>{
     var {data,headers} = await myfetch(`${web_entry}/news/headlines`,{headers:{'User-Agent':User_Agent},agent})

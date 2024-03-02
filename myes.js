@@ -82,8 +82,47 @@ var gzip2s = (s)=>new Promise((r,j)=>{
       else r(result)
   });
 });
+function jPath(obj,path,val){
+  var curObj = obj || {}
+  var path_a = (path||'').split('/')
+  var path_a_length = path_a.length
+  var rt_a = []
+  var part = path;
+  if (val == undefined) { //get mode
+    for (var slice_i=0;slice_i<path_a_length;slice_i++) {
+      if (path_a[slice_i]=='') continue //skip empty...
+      part = path_a[slice_i]
+      if (part=='*'){ //TODO RegExp...
+        var sub_path_a = path_a.slice(slice_i+1)
+        var sub_path = sub_path_a.join('/')
+        if (sub_path==''){
+          rt_a = Object.values(curObj)
+        }else{
+          for (var subval of Object.values(curObj)){
+            rt_a=rt_a.concat(jPath(subval, sub_path) || [])
+          }
+        }
+      }else{
+        curObj = (curObj||{})[part]
+      }
+    }
+    return (part=='*'||rt_a.length>0) ? rt_a : curObj;
+  } else { //set mode (TODO RegExp and *)
+    var key = path_a.slice(-1)
+    for (var part of path_a.slice(0,-1)) {
+      if (part=='') continue
+      if (part=='*') throw Error('not support * in jPath for set mode')
+      if (!curObj[part]) curObj[part] = {}
+      curObj = curObj[part]
+    }
+    if (curObj[key]!=val)
+      curObj[key] = val
+    return obj //for chain
+  }
+}
+var jPathAsync = async(obj,path,val)=>jPath((obj instanceof Promise)?(await obj):obj,path,val);
 var module_exports = { argv2o, tryx, s2o, o2s, myResponse,tryp, myfetch, http, https, urlModule, sleep_async,
-  fs, nothing, date, now, tryRequire, zlib, gzip2s,
+  fs, nothing, date, now, tryRequire, zlib, gzip2s, jPath, jPathAsync,
 
   //@ref https://cnodejs.org/topic/504061d7fef591855112bab5
   md5: (s) => require('crypto').createHash('md5').update(s).digest('hex'),

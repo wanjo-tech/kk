@@ -19,7 +19,9 @@ http://127.0.0.1:8080/?Array.constructor.constructor(%27return%20Object.keys(thi
 module.exports = async(body,ctx,timeout=60000)=>{
   with (require('node:vm')) {
     return await createScript(
-      `[(async function(){return await eval(arguments[0])})][0](${JSON.stringify(body)})`//trick
+      //`[()=>eval(${JSON.stringify(body)})][0]()`//fail
+      //`[(async function(){return await eval(arguments[0])})][0](${JSON.stringify(body)})`//trick
+      `[(function(){return eval(arguments[0])})][0](${JSON.stringify(body)})`//magic
     ).runInContext(createContext(ctx),{breakOnSigint:true,timeout})
   }
 }

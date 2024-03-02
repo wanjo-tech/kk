@@ -1,5 +1,9 @@
-var {o2s,s2o,tryx,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s} = require('./myes')
+var {o2s,s2o,tryx,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync} = require('./myes')
 var init_time = now()
+/*
+TEST CASES after /?
+new Date().toLocaleDateString()
+*/
 module.exports = async (opts)=>{
   var {req,res,url,body,argo,app_id}=opts;
 
@@ -38,6 +42,8 @@ module.exports = async (opts)=>{
     //argo,
     //app_id,
     init_time,
+    now,
+    $:jPathAsync,//e.g. $(news.history_o(945629),'data')
 
     reload:(m='aiwin')=>(typeof tryRequire('./'+m,true)),
     //favicon:{ico:''},
