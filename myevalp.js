@@ -25,3 +25,7 @@ module.exports = async(body,ctx,timeout=60000)=>{
     ).runInContext(createContext(ctx),{breakOnSigint:true,timeout})
   }
 }
+
+//for webpage
+//var myeval = (js,ctx) => [function(){with(arguments[1]||{}) return eval(arguments[0])}][0](js,ctx)
+//function jxEval(js, context) { return Function('with(this) { return ' + js + '; }').call(context); }
