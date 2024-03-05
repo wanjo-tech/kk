@@ -1,0 +1,73 @@
+<h1>jx <button onclick='Build()'>Build</button> <button onclick='Render()'>Render</button> </h1>
+<a href="https://wanjo-tech.github.io/kk/kk.htm" target=_blank>LIVE DEMO</a>
+<script src='jx.js'></script>
+<script>
+var {s2frg,frg2s,jxTryEval,jxBuild,jxUpsert,s2el,s2o}=jx()
+var now = () => new Date().getTime()/1000;
+
+function Build(){
+  var data_s = stageData.innerHTML
+  //console.log('data_s',data_s)
+  var data = jxTryEval(`(${data_s})`,{},console.log)
+  //console.log('data',data)
+  //var template = tpl.innerHTML
+  var template = tpl.textContent
+var t0=now()
+  var elTemplate = s2frg(template);
+var t1=now()
+  var rendered = jxBuild(elTemplate, data);
+var t2=now()
+  var s = frg2s(rendered)
+var t3=now()
+  stageCode.textContent=s
+var t4=now()
+  stageDebug.textContent=JSON.stringify(['s2frg',t1-t0,'jxBuild',t2-t1,'frg2s',t3-t2,'show',t4-t3])
+  return rendered
+}
+function Render(){
+var t0=now()
+  jxUpsert(divStage,Build())
+var t1=now()
+  stageDebug.textContent+=`=>Render ${t1-t0}`
+}
+</script>
+tpl<br/>
+<textarea id='tpl' style='border:1px solid;min-width:640px;min-height:150px'>
+<h1 j-expr>{{thisDate}}</h1>
+<div j-for="val,key,idx in wtf"><li><span j-eval>idx+","+key+":"+val</span></li></div>
+<font>不解析内部 {{ new Date() }}</font>
+<font j-expr>解释内部 {{ new Date() }}</font>
+<font j-expr>解释内部语法错误 {{ new XXX() }}</font>
+<font j-eval>new Date()</font>
+<span j-eval>"Hello"+ " "</span>
+<span j-eval>测试语法错误1</span>
+<div j-if="f1">
+  <font color=red>第一层是的</font>
+  <div j-else><font color=blue>第一层不是</font></div>
+</div>
+<div j-if="true"><font color=green>第一层可以
+  <div j-if="f2a">第二层f2a</div>
+  <div j-if="f2b">第二层f2b</div>
+</font></div>
+<div j-for="错误 in items"><li><span j-eval>idx+","+key+":"+val</span></li></div>
+<div j-for="(val,key,idx) in items"><li><span j-eval>idx+","+key+":"+val</span></li></div>
+<div j-for="val,key,idx in items"><li><span j-eval>idx+","+key+":"+val</span></li></div>
+<div j-for="(val,key,idx) in itemsb">
+  <li><span j-eval>idx+","+key+":"+val</span></li>
+</div>
+<div j-for="(val,key) in itemsb"><li><span j-eval>key+":"+val</span></li></div>
+<div j-for="val,key in itemsb"><li><span j-eval>key+":"+val</span></li></div>
+<div j-for="(val) in itemsb"><li><span j-eval>val</span></li></div>
+<div j-for="val in itemsb"><li><span j-eval>val</span></li></div>
+<div j-for="val in itemsb"><li><span j-eval>测试语法错误2</span></li></div>
+</textarea>
+<br/>data<br/>
+<textarea id='stageData' style='border:1px solid;min-width:640px;min-height:50px'>
+{thisDate:new Date(), items: ["Apple", "Banana", "Cherry"], itemsb:{Apple:222,Banana:333,Cherry:444}, f2b:true}
+</textarea>
+<br/>debug<br/>
+<textarea id='stageDebug' style='border:1px solid;min-width:640px;min-height:30px'></textarea>
+<br/>Build<br/>
+<textarea id='stageCode' style='border:1px solid;min-width:640px;min-height:150px'></textarea>
+<br/>render<br/>
+<div style='border:1px solid' id='divStage'><div>todo</div></div>
