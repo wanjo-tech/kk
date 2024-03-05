@@ -2,6 +2,7 @@
 //DEBUG:[...document.querySelectorAll('[j-err],[j-warn]')].map(console.log)
 //TODO jxRender = (tpl_s,target,data) => jxUpsert(target, s2frg(tpl_s))
 //TODO jxClone4Js() to support inner-js in target
+//TODO server-side rendering
 let jx = (tbx=window.document)=>{
   if (!tbx.console) tbx.console = console
   const tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}}
@@ -57,9 +58,10 @@ let jx = (tbx=window.document)=>{
   function jxUpsert(tgtNode, srcNode) {
     function maybeDifferent(node1, node2) {
       if (node1.nodeType !== node2.nodeType) return true;
-      if (node1.nodeType === Node.TEXT_NODE && node1.textContent.trim() !== node2.textContent.trim()) return true;
       if (node1.nodeType === Node.ELEMENT_NODE && node1.tagName !== node2.tagName) return true;
+      if (node1.nodeType == Node.TEXT_NODE) return false;//skip
       if (node1.childNodes.length != node2.childNodes.length) return true
+      if (!(node1.attributes && !node2.attributes)) return true;
       if (node1.attributes.length !== node2.attributes.length) return true;
       for (let i = 0; i < node1.attributes.length; i++) {
         const attrName = node1.attributes[i].name;
@@ -76,27 +78,34 @@ let jx = (tbx=window.document)=>{
 
       for (let i = 0; i < maxLength; i++) {
         const oldChild = oldChildren[i];
-        const newChild = newChildren[i];
-        if (!oldChild && newChild) {
+        let newChild = newChildren[i];
+        if (newChild && newChild.tagName=='SCRIPT'){
+          newChild = jxClone(newChild) //
+          if (oldChild) oldNode.replaceChild(newChild,oldChild)
+          else oldNode.appendChild(newChild)
+        }else if (!oldChild && newChild) {
           oldNode.appendChild(newChild)
         } else if (oldChild && !newChild) {
           oldNode.removeChild(oldChild);
-        } else if (oldChild && newChild && maybeDifferent(oldChild, newChild)) {
-          //console.log('replace',newChild)
+        } else if (maybeDifferent(oldChild,newChild)) {
           oldNode.replaceChild(newChild, oldChild)
-        } else //to speed up more
+        } else if (oldChild.nodeType == Node.TEXT_NODE && oldChild.textContent == newChild.textContent) {
+        } else { //to speed up more
           updateRecursive(oldChild, newChild);
+        }
       }
     }
     updateRecursive(tgtNode, srcNode);
   }
-  let s2ela=s=>[...new DOMParser().parseFromString(s,'text/html').body.children]
+  //let s2ela=s=>[...new DOMParser().parseFromString(s,'text/html').body.children]
+  let s2ela = s => (doc = document.implementation.createHTMLDocument(), doc.body.innerHTML = s, [...doc.body.childNodes])
   let s2frg=s=>s2ela(s).reduce((frg,n)=>(frg.append(n),frg),tbx.createDocumentFragment())
   let frg2s=frg=>frg?[...frg.childNodes].reduce((html, node) => (html + (node.outerHTML||node.textContent)),''):null
   let s2el=(s)=>s2frg(s).children[0]
+
   let jxNode=(tagName='div')=>tbx.createElement(tagName)
-  let jxClone4Js = ele => ele.tagName !== 'SCRIPT' ? ele.cloneNode(true) : Object.assign(tbx.createElement(ele.tagName), ...['id', 'type', 'src', 'innerHTML'].filter(attr => ele[attr]).map(attr => ({[attr]: ele[attr]})))
-  return {jxEval,jxTryEval,jxBuild,jxUpsert,jxNode,tryx,s2o,o2s,s2frg,frg2s,s2el,s2ela}
+  let jxClone= (ele,deep) => ele.tagName !== 'SCRIPT' ? ele.cloneNode(deep) : Object.assign(tbx.createElement(ele.tagName), ...['id', 'type', 'src', 'innerHTML'].filter(attr => ele[attr]).map(attr => ({[attr]: ele[attr]})))
+  return {jxClone,jxEval,jxTryEval,jxBuild,jxUpsert,jxNode,tryx,s2o,o2s,s2frg,frg2s,s2el,s2ela}
 }
 
 

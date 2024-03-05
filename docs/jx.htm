@@ -1,38 +1,44 @@
 <h1>jx <button onclick='Build()'>Build</button> <button onclick='Render()'>Render</button> </h1>
-<h3><a href="https://wanjo-tech.github.io/kk/jx.htm" target=_blank>LIVE DEMO</a></h3>
+<h3><a href="https://kk.datakk.com/jx.htm" target=_blank>LIVE DEMO (https://kk.datakk.com/jx.htm)</a><h3>
 <script src='jx.js'></script>
 <script>
 var {s2frg,frg2s,jxTryEval,jxBuild,jxUpsert,s2el,s2o}=jx()
 var now = () => new Date().getTime()/1000;
-
 function Build(){
   var data_s = stageData.innerHTML
   //console.log('data_s',data_s)
   var data = jxTryEval(`(${data_s})`,{},console.log)
   //console.log('data',data)
   //var template = tpl.innerHTML
-  var template = tpl.textContent
+  //var template = tplStage.textContent
+  template = tplStage.value
+  //console.log('template',template)
 var t0=now()
   var elTemplate = s2frg(template);
 var t1=now()
   var rendered = jxBuild(elTemplate, data);
+  //console.log('rendered',rendered)
 var t2=now()
   var s = frg2s(rendered)
 var t3=now()
-  stageCode.textContent=s
+  //stageCode.textContent=s
+  stageCode.value=s
 var t4=now()
-  stageDebug.textContent=JSON.stringify(['s2frg',t1-t0,'jxBuild',t2-t1,'frg2s',t3-t2,'show',t4-t3])
+  //stageDebug.textContent=JSON.stringify(['s2frg',t1-t0,'jxBuild',t2-t1,'frg2s',t3-t2,'show',t4-t3])
+  stageDebug.value=JSON.stringify(['s2frg',t1-t0,'jxBuild',t2-t1,'frg2s',t3-t2,'show',t4-t3])
   return rendered
 }
 function Render(){
 var t0=now()
   jxUpsert(divStage,Build())
 var t1=now()
-  stageDebug.textContent+=`=>Render ${t1-t0}`
+  //stageDebug.textContent+=`=>Render ${t1-t0}`
+  stageDebug.value+=`=>Render ${t1-t0}`
 }
 </script>
 tpl<br/>
-<textarea id='tpl' style='border:1px solid;min-width:640px;min-height:150px'>
+<!-- <template id='tpl'> <script>console.log(1234)</script> </template> -->
+<textarea id='tplStage' style="border:1px solid;min-width:640px;min-height:150px">
 <h1 j-expr>{{thisDate}}</h1>
 <div j-for="val,key,idx in wtf"><li><span j-eval>idx+","+key+":"+val</span></li></div>
 <font>不解析内部 {{ new Date() }}</font>
@@ -60,6 +66,7 @@ tpl<br/>
 <div j-for="(val) in itemsb"><li><span j-eval>val</span></li></div>
 <div j-for="val in itemsb"><li><span j-eval>val</span></li></div>
 <div j-for="val in itemsb"><li><span j-eval>测试语法错误2</span></li></div>
+
 </textarea>
 <br/>data<br/>
 <textarea id='stageData' style='border:1px solid;min-width:640px;min-height:50px'>
@@ -70,4 +77,4 @@ tpl<br/>
 <br/>Build<br/>
 <textarea id='stageCode' style='border:1px solid;min-width:640px;min-height:150px'></textarea>
 <br/>render<br/>
-<div style='border:1px solid' id='divStage'><div>todo</div></div>
+<div style='border:1px solid' id='divStage'></div>
