@@ -1,4 +1,4 @@
-# kk
+# kk.datakk.com
 
 KK (寬客, kuanke, the word for quant in chinese)
 
