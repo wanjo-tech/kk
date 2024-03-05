@@ -60,6 +60,13 @@ let jx = (tbx=window.document)=>{
       if (node1.nodeType === Node.TEXT_NODE && node1.textContent.trim() !== node2.textContent.trim()) return true;
       if (node1.nodeType === Node.ELEMENT_NODE && node1.tagName !== node2.tagName) return true;
       if (node1.childNodes.length != node2.childNodes.length) return true
+      if (node1.attributes.length !== node2.attributes.length) return true;
+      for (let i = 0; i < node1.attributes.length; i++) {
+        const attrName = node1.attributes[i].name;
+        if (node1.getAttribute(attrName) !== node2.getAttribute(attrName)) {
+          return true;
+        }
+      }
       return false;
     }
     function updateRecursive(oldNode, newNode) {
