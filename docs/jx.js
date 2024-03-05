@@ -1,6 +1,7 @@
 //the REAL SMALLEST web js template engine by Wajo; For Chrome45(ECMAScript2015)+
 //DEBUG:[...document.querySelectorAll('[j-err],[j-warn]')].map(console.log)
 //TODO jxRender = (tpl_s,target,data) => jxUpsert(target, s2frg(tpl_s))
+//TODO jxClone4Js() to support inner-js in target
 let jx = (tbx=window.document)=>{
   if (!tbx.console) tbx.console = console
   const tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}}
@@ -87,8 +88,8 @@ let jx = (tbx=window.document)=>{
   let frg2s=frg=>frg?[...frg.childNodes].reduce((html, node) => (html + (node.outerHTML||node.textContent)),''):null
   let s2el=(s)=>s2frg(s).children[0]
   let jxNode=(tagName='div')=>tbx.createElement(tagName)
-  let jxClone4Render = ele => ele.tagName !== 'SCRIPT' ? ele.cloneNode(true) : Object.assign(tbx.createElement(ele.tagName), ...['id', 'type', 'src', 'innerHTML'].filter(attr => ele[attr]).map(attr => ({[attr]: ele[attr]})))
-  return {jxEval,jxTryEval,jxBuild,jxUpsert,jxNode,tryx,s2o,s2frg,frg2s,s2el}
+  let jxClone4Js = ele => ele.tagName !== 'SCRIPT' ? ele.cloneNode(true) : Object.assign(tbx.createElement(ele.tagName), ...['id', 'type', 'src', 'innerHTML'].filter(attr => ele[attr]).map(attr => ({[attr]: ele[attr]})))
+  return {jxEval,jxTryEval,jxBuild,jxUpsert,jxNode,tryx,s2o,o2s,s2frg,frg2s,s2el,s2ela}
 }
 
 
