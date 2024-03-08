@@ -1,7 +1,5 @@
-//the REAL SMALLEST web js template engine by Wajo; For Chrome45(ECMAScript2015)+
+//the REAL SMALLEST web-js-template engine by Wanjo; For Chrome45(ECMAScript2015)+
 //DEBUG:[...document.querySelectorAll('[j-err],[j-warn]')].map(console.log)
-//TODO jxRender = (tpl_s,target,data) => jxUpsert(target, s2frg(tpl_s))
-//TODO jxClone4Js() to support inner-js in target
 //TODO server-side rendering
 let jx = (tbx=window.document)=>{
   if (!tbx.console) tbx.console = console
@@ -90,7 +88,7 @@ let jx = (tbx=window.document)=>{
         } else if (maybeDifferent(oldChild,newChild)) {
           oldNode.replaceChild(newChild, oldChild)
         } else if (oldChild.nodeType == Node.TEXT_NODE && oldChild.textContent == newChild.textContent) {
-        } else { //to speed up more
+        } else {
           updateRecursive(oldChild, newChild);
         }
       }
