@@ -1,30 +1,31 @@
 /*
-"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --proxy-server=http://127.0.0.1:7777 --test-type --disable-web-security --user-data-dir="%TMP%\%date%" --remote-debugging-port=9222 --remote-allow-origins=* --disable-features=Translate --no-first-run --app=https://api.ipify.org
-"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --proxy-server=http://127.0.0.1:7777 --test-type --disable-web-security --user-data-dir="%TMP%\%date%" --remote-debugging-port=9222 --remote-allow-origins=* --disable-features=Translate --no-first-run https://api.ipify.org
+
+## cdp server example
+"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --proxy-server=http://127.0.0.1:7777 --host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1" --test-type --disable-web-security --user-data-dir="%TMP%\%date%" --remote-debugging-port=9222 --remote-allow-origins=* --disable-features=Translate --no-first-run file://%cd%/cdp_backend.html
+"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --proxy-server=http://127.0.0.1:7777 --host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1" --test-type --disable-web-security --user-data-dir="%TMP%\%date%" --remote-debugging-port=9222 --remote-allow-origins=* --disable-features=Translate --no-first-run https://api.ipify.org
+"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --proxy-server=http://127.0.0.1:7777 --host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1" --test-type --disable-web-security --user-data-dir="%TMP%\%date%" --remote-debugging-port=9222 --remote-allow-origins=* --disable-features=Translate --no-first-run --app=https://api.ipify.org
+
 "%ProgramFiles%\Google\Chrome\Application\chrome.exe" --proxy-server=http://127.0.0.1:7777 --test-type --disable-web-security --user-data-dir="%TMP%\%date%" --remote-debugging-port=9222 --remote-allow-origins=* --disable-features=Translate --no-first-run https://api.ipify.org
 "%ProgramFiles%\Google\Chrome\Application\chrome.exe" --test-type --disable-web-security --user-data-dir="%TMP%\%date%" --remote-debugging-port=9222 --remote-allow-origins=* --disable-features=Translate --no-first-run https://api.ipify.org
+
+## QUICK TEST CASE AND EXAMPLE
+await require('./bizcdp')({pattern:'https://api.ipify.org',expression:`location.href`})
 */
 
-const WebSocket = require('ws');
-const sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
 
 var ws_o = {}
 var ws_cache_o = {}
 var id = 0;
 
-/* TEST CASE
-await require('./bizcdp')({pattern:'https://api.ipify.org',expression:`location.href`})
-*/
-
-async function cdp_call(ws,method,params){
-  return new Promise((resolve,reject)=>{
+var cdp_call = (ws,method,params)=>new Promise((resolve,reject)=>{
     id = (id+1) % 8192;
     ws_cache_o[id] = (rst,err)=>{(rst)?resolve(rst):reject(err)}
     ws.send(JSON.stringify({id, method, params}));
-  })
-}
+})
 
-var module_exports = async(opts)=>{
+if (typeof WebSocket==='undefined') {var WebSocket = require('ws')}
+var bizcdp = async(opts)=>{
+  const sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
   var {pattern, init, url, expression, port, host, debug=false, reload=0} = opts || {}
   if (!port) port=9222
   if (!host) host='127.0.0.1'
@@ -99,18 +100,25 @@ var module_exports = async(opts)=>{
       await cdp_call(ws,'Page.navigate',{url})
       await sleep_async(reload)
     }
-    //eval_js
-    var rst = await cdp_call(ws,'Runtime.evaluate',{expression})
-    if (rst && rst.result && rst.result.className=='Promise'){
-      var {className,description,objectId,subtype} = rst.result
-      rst = await cdp_call('Runtime.awaitPromise',{promiseObjectId:objectId,returnByValue:true})
-    }
-    if (rst && rst.result && rst.result.value) {
-      return rst.result.value
-    } else {
-      logger('TODO',rst)
-    }
+    //var rst = await cdp_call(ws,'Runtime.evaluate',{expression})
+    var rst = await cdp_call(ws,'Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true})
+    //if (rst && rst.result && rst.result.className=='Promise'){
+    //  console.log('Promise',rst.result)
+    //  var {className,description,objectId,subtype} = rst.result
+    //  rst = await cdp_call(ws,'Runtime.awaitPromise',{promiseObjectId:objectId,returnByValue:true})
+    //}
+    if (rst && rst.result && rst.result.value) return rst.result.value
+    if (rst && rst.result && rst.result.className=='string') return rst.result.result.value
+    console.log('TMP',rst.result || rst)
+    var {className,description,objectId,subtype} = rst.result
+    let result = await cdp_call(ws, 'Runtime.callFunctionOn', {
+        objectId: objectId,
+        functionDeclaration: "function() { return JSON.stringify(this); }",
+        returnByValue: true, // 设置为true以直接在响应中返回值
+        awaitPromise: true  // 如果对象是一个Promise，等待它解决
+    });
+    let jsonString = result.result.value;
+    return JSON.parse(jsonString)
   }
 }
-
-module.exports = module_exports
+if (typeof module!=='undefined' && module.exports) module.exports = bizcdp

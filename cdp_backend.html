@@ -1,0 +1,16 @@
+<head><title>KK BACKEND CDP</title></head>
+<body>
+<h1>KK SERVER (CDP)</h1>
+monitor and quick dev only, IP=<span id='divIP'></span>
+<hr/>
+<script src='bizcdp.js'></script>
+<script>
+const sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
+var myfetch = (u,body,ext_headers={}) => fetch(u,{method:body===undefined?'GET':'POST',headers:{...ext_headers},body:body===undefined?undefined:((typeof body=='string')?body:JSON.stringify(body))})
+var myfetch_text = async(u,body,ext_headers={})=>(await myfetch(u,body,ext_headers)).text();
+var myfetch_json = async(u,body,ext_headers={})=>(await myfetch(u,body,ext_headers)).json();
+
+(async()=>{
+ divIP.innerHTML = await myfetch_text('https://api.ipify.org')
+})()
+</script>

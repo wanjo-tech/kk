@@ -41,7 +41,7 @@ const server = http.createServer(async(req, res) => {
           //if (!body) body = decodeURI(url)
           if (!body) body = decodeURI(urlModule.parse(url).query) // parse(url).pathname => kinda config
           var app_id = (argo.app||'default')
-          app = require('./'+app_id)
+          app = require('./app'+app_id)
           return await app({req,res,url,body,argo,app_id})
         }
         if (!argo.fwd) throw 'fwd'
@@ -96,5 +96,5 @@ const server = http.createServer(async(req, res) => {
         res.end(o2s({msg,code}));
     }
 });
-server.listen(argo.port||80,argo.host||'127.0.0.1',()=>console.log('Server listening',server.address()));
+server.listen(argo.port||80,argo.host||'127.0.0.1',()=>console.log('Server started',{app:(argo.app||'default'),...server.address()}));
 
