@@ -5,7 +5,7 @@
 var {s2frg,frg2s,jxTryEval,jxBuild,jxUpsert,s2el,s2o}=jx()
 var now = () => new Date().getTime()/1000;
 function Build(){
-  var data_s = stageData.innerHTML
+  var data_s = stageData.value
   //console.log('data_s',data_s)
   var data = jxTryEval(`(${data_s})`,{},console.log)
   //console.log('data',data)
