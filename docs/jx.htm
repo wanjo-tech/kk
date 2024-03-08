@@ -2,6 +2,8 @@
 <h3><a href="https://kk.datakk.com/jx.htm" target=_blank>LIVE DEMO (https://kk.datakk.com/jx.htm)</a><h3>
 <script src='jx.js'></script>
 <script>
+//var jevil=function(str){ return eval(str);}.call(context,somestring);
+var jev=(js,ctx)=>(js=>eval(js)).call(ctx,js);
 var {s2frg,frg2s,jxTryEval,jxBuild,jxUpsert,s2el,s2o}=jx()
 var now = () => new Date().getTime()/1000;
 function Build(){
