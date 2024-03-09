@@ -2,9 +2,7 @@
 <h3><a href="https://kk.datakk.com/jx.htm" target=_blank>LIVE DEMO (https://kk.datakk.com/jx.htm)</a><h3>
 <script src='jx.js'></script>
 <script>
-//var jevil=function(str){ return eval(str);}.call(context,somestring);
-var jev=(js,ctx)=>(js=>eval(js)).call(ctx,js);
-var {s2frg,frg2s,jxTryEval,jxBuild,jxUpsert,s2el,s2o}=jx()
+var {s2bdy,jxTryEval,jxBuild,jxUpsert,s2el,s2o}=jx()
 var now = () => new Date().getTime()/1000;
 function Build(){
   var data_s = stageData.value
@@ -16,23 +14,21 @@ function Build(){
   template = tplStage.value
   //console.log('template',template)
 var t0=now()
-  var elTemplate = s2frg(template);
+  var elTemplate = s2bdy(template);
 var t1=now()
-  var rendered = jxBuild(elTemplate, data);
-  //console.log('rendered',rendered)
+  var built = jxBuild(elTemplate, data);
 var t2=now()
-  var s = frg2s(rendered)
+  var s = built.innerHTML
 var t3=now()
-  //stageCode.textContent=s
   stageCode.value=s
 var t4=now()
-  //stageDebug.textContent=JSON.stringify(['s2frg',t1-t0,'jxBuild',t2-t1,'frg2s',t3-t2,'show',t4-t3])
-  stageDebug.value=JSON.stringify(['s2frg',t1-t0,'jxBuild',t2-t1,'frg2s',t3-t2,'show',t4-t3])
-  return rendered
+  stageDebug.value=JSON.stringify(['compile',t1-t0,'jxBuild',t2-t1,'2s',t3-t2,'show',t4-t3])
+  return built 
 }
 function Render(){
 var t0=now()
-  jxUpsert(divStage,Build())
+  //jxUpsert(divStage,Build())
+  jxUpsert(divStage,jxBuild(s2bdy(tplStage.value),jxTryEval(`(${stageData.value})`)))
 var t1=now()
   //stageDebug.textContent+=`=>Render ${t1-t0}`
   stageDebug.value+=`=>Render ${t1-t0}`
