@@ -71,8 +71,8 @@ let jx = (tbx=window.document)=>{
     for (let i = 0; i < maxLength; i++) {
       const oldChild = oldChildren[i];
       let newChild = newChildren[i];
-      if (newChild && newChild.tagName=='SCRIPT'){
-        newChild = jxClone(newChild)
+      if (newChild && newChild.tagName=='SCRIPT' && (!newChild.type||newChild.type=='text/javascript')){
+        newChild = jxCloneJs(newChild)
         if (oldChild) oldNode.replaceChild(newChild,oldChild)
         else oldNode.appendChild(newChild)
       }else if (!oldChild && newChild) {
@@ -90,8 +90,8 @@ let jx = (tbx=window.document)=>{
   let s2bdy = s => (doc = document.implementation.createHTMLDocument(), doc.body.innerHTML = s, doc.body)
   let s2ela = s => [...s2bdy(s).childNodes]
   let s2el=(s)=>s2bdy(s).childNodes[0]
-  let jxClone= (ele,deep) => ele.tagName !== 'SCRIPT' ? ele.cloneNode(deep) : Object.assign(tbx.createElement(ele.tagName), ...['id', 'type', 'src', 'innerHTML'].filter(attr => ele[attr]).map(attr => ({[attr]: ele[attr]})))
-  return {jxClone,jxEval,jxTryEval,jxBuild,jxUpsert, tryx,s2o,o2s,s2bdy,s2el,s2ela}
+  let jxCloneJs=(ele)=>Object.assign(tbx.createElement(ele.tagName),...['id','type','src','innerHTML'].filter(a=>ele[a]).map(a=>({[a]:ele[a]})))
+  return {jxCloneJs,jxEval,jxTryEval,jxBuild,jxUpsert, tryx,s2o,o2s,s2bdy,s2el,s2ela}
 }
 
 //DELETED FYR
