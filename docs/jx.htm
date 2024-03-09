@@ -5,10 +5,12 @@
 <script>
 var {s2bdy,jxTryEval,jxBuild,jxUpsert,s2el,s2o}=jx()
 var now = () => new Date().getTime()/1000;
+var gData = {}
 function Build(){
   var data_s = stageData.value
   //console.log('data_s',data_s)
   var data = jxTryEval(`(${data_s})`,{},console.log)
+  Object.assign(gData,data)
   //console.log('data',data)
   //var template = tpl.innerHTML
   //var template = tplStage.textContent
@@ -17,7 +19,8 @@ function Build(){
 var t0=now()
   var elTemplate = s2bdy(template);
 var t1=now()
-  var built = jxBuild(elTemplate, data);
+  //var built = jxBuild(elTemplate, data);
+  var built = jxBuild(elTemplate, gData);
 var t2=now()
   var s = built.innerHTML
 var t3=now()
@@ -29,17 +32,28 @@ var t4=now()
 function Render(){
 var t0=now()
   //jxUpsert(divStage,Build())
-  jxUpsert(divStage,jxBuild(s2bdy(tplStage.value),jxTryEval(`(${stageData.value})`)))
+  var data = jxTryEval(`(${stageData.value})`)
+  Object.assign(gData,data)
+  //jxUpsert(divStage,jxBuild(s2bdy(tplStage.value),jxTryEval(`(${stageData.value})`)))
+  jxUpsert(divStage,jxBuild(s2bdy(tplStage.value),gData))
 var t1=now()
   //stageDebug.textContent+=`=>Render ${t1-t0}`
   stageDebug.value+=`=>Render ${t1-t0}`
 }
 </script>
+<h2> Simple Pattern:</h2>
+<h3>
+(event,data)=>(update(data,event),render(template,data))
+</h3>
+<hr/>
 <button onclick='Build()'>Build</button> <button onclick='Render()'>Render</button> tpl
 <br/>
 <!-- <template id='tpl'> <script>console.log(1234)</script> </template> -->
 <textarea id='tplStage' style="border:1px solid;min-width:640px;min-height:150px">
-<h1 j-expr>{{thisDate}}</h1>
+thisDate:<input j-bind='thisDate'></input>
+test bind:<input j-bind='thisDate'></input>
+<br/>test @change <input @change='console.log(this.value)' value='abcd'/>
+<h3 j-expr>{{thisDate}}</h3>
 <div j-for="val,key,idx in wtf"><li><span j-eval>idx+","+key+":"+val</span></li></div>
 <font>不解析内部 {{ new Date() }}</font>
 <font j-expr>解释内部 {{ new Date() }}</font>
@@ -88,5 +102,22 @@ var t1=now()
 //let frg2s=frg=>[...frg.childNodes].reduce((s,n)=>(s+(n.outerHTML||n.textContent)),'')
 //let s2el=(s)=>s2frg(s).childNodes[0]
 //let jxNode=(tagName='div')=>tbx.createElement(tagName)
+
+    if (theAttribute=node.getAttribute?.('j-bind')) {
+      if (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') {
+        returnNode.value = data[theAttribute] || '';
+        bindings.push({ propName: theAttribute, element: returnNode });
+        returnNode.addEventListener('input', (event) => {
+console.log('input',event.target.value)
+          data[theAttribute] = event.target.value;
+          bindings.forEach(binding => {
+            if (binding.propName === theAttribute && binding.element !== event.target) {
+console.log('binding',binding)
+              binding.element.value = event.target.value;
+            }
+          });
+        });
+      }
+    }
 
 -->
