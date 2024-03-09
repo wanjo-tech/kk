@@ -9,6 +9,7 @@ let jx = (tbx=window.document)=>{
   const s2o=jxTryEval,o2s=(o,h)=>tryx(()=>JSON.stringify(o),h)
   function jxBuild(node, data={}) {
     if (node.nodeType === Node.TEXT_NODE) return tbx.createTextNode(node.textContent, data)
+    if (node.tagName=='TEMPLATE'||node.tagName=='SCRIPT') node = s2bdy(node.innerHTML)
     const returnNode = node.cloneNode?.()
     let hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),false)
     let hErr = ex=>(returnNode.setAttribute?.('j-err',''+ex),'['+ex+']')
@@ -52,7 +53,8 @@ let jx = (tbx=window.document)=>{
   function maybeDifferent(node1, node2) {
     if (node1.nodeType !== node2.nodeType) return true;
     if (node1.nodeType === Node.ELEMENT_NODE && node1.tagName !== node2.tagName) return true;
-    if (node1.nodeType == Node.TEXT_NODE) return false;//skip
+    ////if (node1.nodeType == Node.TEXT_NODE) return false;
+    if (node1.nodeType == Node.TEXT_NODE && node1.textContent != node2.textContent) return true; 
     if (node1.childNodes.length != node2.childNodes.length) return true
     //if (!node1.attributes ^ !node2.attributes) return true;
     if (!node1.attributes || !node2.attributes) return false;
@@ -63,6 +65,7 @@ let jx = (tbx=window.document)=>{
     }
     return false;
   }
+  //WARN the newNode will be touched, so please make it cloned by jxBuild(tplNode,ctx)
   function jxUpsert(oldNode, newNode) {
     const oldChildren = [...oldNode.childNodes||[]];
     const newChildren = [...newNode.childNodes||[]];
@@ -71,7 +74,7 @@ let jx = (tbx=window.document)=>{
       const oldChild = oldChildren[i];
       let newChild = newChildren[i];
       if (newChild && newChild.tagName=='SCRIPT' && (!newChild.type||newChild.type=='text/javascript')){
-        newChild = jxCloneJs(newChild)
+        newChild = jxCloneJs(newChild) // trick for js
         if (oldChild) oldNode.replaceChild(newChild,oldChild)
         else oldNode.appendChild(newChild)
       }else if (!oldChild && newChild) {
@@ -80,7 +83,6 @@ let jx = (tbx=window.document)=>{
         oldNode.removeChild(oldChild);
       } else if (maybeDifferent(oldChild,newChild)) {
         oldNode.replaceChild(newChild, oldChild)
-      } else if (oldChild.nodeType == Node.TEXT_NODE && oldChild.textContent == newChild.textContent) {
       } else {
         jxUpsert(oldChild, newChild);
       }
