@@ -1,5 +1,6 @@
-<h1>jx <button onclick='Build()'>Build</button> <button onclick='Render()'>Render</button> </h1>
-<h3><a href="https://kk.datakk.com/jx.htm" target=_blank>LIVE DEMO (https://kk.datakk.com/jx.htm)</a><h3>
+<h1>jx - tiny web-js template engine</h1>
+<h3><a href="https://kk.datakk.com/jx.htm" target=_blank>DOC&TESTER (https://kk.datakk.com/jx.htm)</a><h3>
+<h3><a href="https://github.com/wanjo-tech/kk/blob/main/docs/jx.js" target=_blank>SRC (https://github.com/wanjo-tech/kk/blob/main/docs/jx.js)</a><h3>
 <script src='jx.js'></script>
 <script>
 var {s2bdy,jxTryEval,jxBuild,jxUpsert,s2el,s2o}=jx()
@@ -34,7 +35,8 @@ var t1=now()
   stageDebug.value+=`=>Render ${t1-t0}`
 }
 </script>
-tpl<br/>
+<button onclick='Build()'>Build</button> <button onclick='Render()'>Render</button> tpl
+<br/>
 <!-- <template id='tpl'> <script>console.log(1234)</script> </template> -->
 <textarea id='tplStage' style="border:1px solid;min-width:640px;min-height:150px">
 <h1 j-expr>{{thisDate}}</h1>
@@ -76,3 +78,15 @@ tpl<br/>
 <textarea id='stageCode' style='border:1px solid;min-width:640px;min-height:150px'></textarea>
 <br/>render<br/>
 <div style='border:1px solid' id='divStage'></div>
+<!--
+//DEBUG:[...document.querySelectorAll('[j-err],[j-warn]')].map(console.log)
+//TODO server-side rendering
+
+//DELETED FYR
+//let s2frg=s=>s2ela(s).reduce((frg,n)=>(frg.append(n),frg),tbx.createDocumentFragment())
+//let frg2s=frg=>frg?[...frg.childNodes].reduce((s,n)=>(s+(n.outerHTML||n.textContent)),''):null
+//let frg2s=frg=>[...frg.childNodes].reduce((s,n)=>(s+(n.outerHTML||n.textContent)),'')
+//let s2el=(s)=>s2frg(s).childNodes[0]
+//let jxNode=(tagName='div')=>tbx.createElement(tagName)
+
+-->

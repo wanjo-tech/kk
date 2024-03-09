@@ -1,6 +1,5 @@
 //the REAL SMALLEST web-js-template engine by Wanjo; For Chrome45(ECMAScript2015)+
-//DEBUG:[...document.querySelectorAll('[j-err],[j-warn]')].map(console.log)
-//TODO server-side rendering
+//DOC&TEST https://kk.datakk.com/jx.htm
 let jx = (tbx=window.document)=>{
   //if (!tbx.console) tbx.console = console
   const tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}}
@@ -94,9 +93,3 @@ let jx = (tbx=window.document)=>{
   return {jxCloneJs,jxEval,jxTryEval,jxBuild,jxUpsert, tryx,s2o,o2s,s2bdy,s2el,s2ela}
 }
 
-//DELETED FYR
-//let s2frg=s=>s2ela(s).reduce((frg,n)=>(frg.append(n),frg),tbx.createDocumentFragment())
-//let frg2s=frg=>frg?[...frg.childNodes].reduce((s,n)=>(s+(n.outerHTML||n.textContent)),''):null
-//let frg2s=frg=>[...frg.childNodes].reduce((s,n)=>(s+(n.outerHTML||n.textContent)),'')
-//let s2el=(s)=>s2frg(s).childNodes[0]
-//let jxNode=(tagName='div')=>tbx.createElement(tagName)
