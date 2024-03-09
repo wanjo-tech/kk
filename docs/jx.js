@@ -1,19 +1,25 @@
 //the REAL SMALLEST web-js-template engine by Wanjo; For Chrome45(ECMAScript2015)+
 //DOC&TEST https://kk.datakk.com/jx.htm
+//TODO j-bind, j-model @onchange etc..
 let jx = (tbx=window.document)=>{
   //if (!tbx.console) tbx.console = console
   const tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}}
   const jev=function(){with(this)return eval(arguments[0])}
   const jxEval=(js,ctx)=>jev.bind(ctx)(js);
   const jxTryEval=(txt,ctx,h)=>tryx(()=>jxEval(txt,ctx),h)
-  const s2o=jxTryEval,o2s=(o,h)=>tryx(()=>JSON.stringify(o),h)
+  const s2o=(s,h)=>jxTryEval(`(${s})`,h)
+  const o2s=(o,h)=>tryx(()=>JSON.stringify(o),h)
   function jxBuild(node, data={}) {
     if (node.nodeType === Node.TEXT_NODE) return tbx.createTextNode(node.textContent, data)
     if (node.tagName=='TEMPLATE'||node.tagName=='SCRIPT') node = s2bdy(node.innerHTML)
     const returnNode = node.cloneNode?.()
-    let hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),false)
+    let hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),'')
     let hErr = ex=>(returnNode.setAttribute?.('j-err',''+ex),'['+ex+']')
     let theAttribute;
+    if (theAttribute=node.getAttribute?.(':value')){
+      var value = jxTryEval(theAttribute,data,hWarn)
+      returnNode.setAttribute?.('value',value)
+    }
     if (node.hasAttribute?.('j-expr')){
       let resultNode= node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxTryEval(expr,data,ex=>'['+ex+']'))
       if (resultNode) returnNode.appendChild(tbx.createTextNode(resultNode))
