@@ -51,33 +51,31 @@ var t1=now()
 <!-- <template id='tpl'> <script>console.log(1234)</script> </template> -->
 <textarea id='tplStage' style="border:1px solid;min-width:640px;min-height:150px">
 <br/>test @change <input @change='alert(this.value)' value='abcd'/>
-<h3 j-expr>{{thisDate}}</h3>
-<div j-for="val,key,idx in wtf"><li><span j-eval>idx+","+key+":"+val</span></li></div>
-<font>不解析内部 {{ new Date() }}</font>
-<font j-expr>解释内部 {{ new Date() }}</font>
-<font j-expr>解释内部语法错误 {{ new XXX() }}</font>
-<font j-eval>new Date()</font>
-<span j-eval>"Hello"+ " "</span>
-<span j-eval>测试语法错误1</span>
+<h3>thisDate={{thisDate}}</h3>
+<div j-for="val,key,idx in wtf"><li>{{ idx+","+key+":"+val }}</li></div>
+<font>OK {{ new Date() }}</font>
+<font>KO {{ new XXX() }}</font>
 <div j-if="f1">
-  <font color=red>第一层是的</font>
-  <div j-else><font color=blue>第一层不是</font></div>
+  <font color=red>L1-if</font>
+  <div j-else><font color=blue>L1-else</font></div>
 </div>
-<div j-if="true"><font color=green>第一层可以
-  <div j-if="f2a">第二层f2a</div>
-  <div j-if="f2b">第二层f2b</div>
+<div j-if="true"><font color=green>L1-true
+  <div j-if="f2a">L2-f2a</div>
+  <div j-if="f2b">L2-f2b</div>
 </font></div>
-<div j-for="错误 in items"><li><span j-eval>idx+","+key+":"+val</span></li></div>
-<div j-for="(val,key,idx) in items"><li><span j-eval>idx+","+key+":"+val</span></li></div>
-<div j-for="val,key,idx in items"><li><span j-eval>idx+","+key+":"+val</span></li></div>
+<div j-for="ERR in items"><li>{{ idx+","+key+":"+val }}</li></div>
+<div j-for="(val,key,idx) in items"><li>{{ idx+","+key+":"+val }}</li></div>
+<div j-for="val,key,idx in items"><li>{{ idx+","+key+":"+val }}</li></div>
 <div j-for="(val,key,idx) in itemsb">
-  <li><span j-eval>idx+","+key+":"+val</span></li>
+  <li>{{ idx+","+key+":"+val }}</li>
 </div>
-<div j-for="(val,key) in itemsb"><li><span j-eval>key+":"+val</span></li></div>
-<div j-for="val,key in itemsb"><li><span j-eval>key+":"+val</span></li></div>
-<div j-for="(val) in itemsb"><li><span j-eval>val</span></li></div>
-<div j-for="val in itemsb"><li><span j-eval>val</span></li></div>
-<div j-for="val in itemsb"><li><span j-eval>测试语法错误2</span></li></div>
+<div j-for="(val,key) in itemsb"><li>{{key+":"+val}}</li></div>
+<div j-for="val,key in itemsb"><li>{{key+":"+val}}</li></div>
+<div j-for="(val) in itemsb"><li>{{val}}</li></div>
+<div j-for="val in itemsb"><li>{{val}}</li></div>
+<div j-for="val in itemsb"><li>{{TestSyntaxError2}}</li></div>
+test j-text
+<div j-for="val in itemsb" j-text="val"></div>
 
 </textarea>
 <br/>data=<br/>

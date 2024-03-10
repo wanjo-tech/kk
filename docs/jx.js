@@ -7,7 +7,10 @@ let jx = (tbx=window.document)=>{
   const s2o=(s,h)=>jxTryEval(`(${s})`,h)
   const o2s=(o,h)=>tryx(()=>JSON.stringify(o),h)
   function jxBuild(node, data={}) {
-    if (node.nodeType === Node.TEXT_NODE) return tbx.createTextNode(node.textContent, data)
+    if (node.nodeType === Node.TEXT_NODE){
+      let txt = node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxTryEval(expr,data,ex=>'['+ex+']'))
+      return tbx.createTextNode(txt)
+    }
     if (node.tagName=='TEMPLATE'||node.tagName=='SCRIPT') node = s2bdy(node.innerHTML)
     let returnNode = node.cloneNode?.()
     let hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),'')
@@ -33,26 +36,27 @@ let jx = (tbx=window.document)=>{
           const loopData={...data,[valVar]:val,...(keyVar&&{[keyVar]:key}),...(idxVar&&{[idxVar]:idx})}
           var newNode = node.cloneNode();
           newNode.removeAttribute('j-for');
+          newNode.setAttribute('j-for-',theAttribute);
           buildWithChildren(node,loopData,newNode)
-          returnNode.appendChild(newNode)
+          returnNode.appendChild(jxBuild(newNode,loopData))
         })
       }
     } else if (node.hasAttribute?.('j-else')) { //SKIP for handled in j-if branch
+      returnNode.removeAttribute('j-else');
+      returnNode.setAttribute('j-else-','');
     } else if (theAttribute=node.getAttribute?.('j-if')) {
       const eval_result = !!jxTryEval(theAttribute,data,hWarn)
-      returnNode.setAttribute?.('j-result',eval_result)
+      returnNode.removeAttribute('j-if');
+      returnNode.setAttribute?.('j-if-',eval_result)
       let resultNode = eval_result ? node:node.querySelector('[j-else]');
       buildWithChildren(resultNode,data,returnNode)
-    } else if (node.hasAttribute?.('j-expr')){
-      let txt = node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxTryEval(expr,data,ex=>'['+ex+']'))
-      if (txt) returnNode.appendChild(tbx.createTextNode(txt))
-      else node.setAttribute?.('j-err','expr')
-    }else if (node.hasAttribute?.('j-eval')){
-      let txt = jxTryEval(node.textContent,data,hErr)
-      returnNode.appendChild(tbx.createTextNode(txt))
     } else if (theAttribute=node.getAttribute?.('j-text')) {
+      returnNode.removeAttribute('j-text');
+      returnNode.setAttribute('j-text-',theAttribute);
       returnNode.textContent = jxTryEval(theAttribute,data,hErr)
     } else if (theAttribute=node.getAttribute?.('j-html')) {
+      returnNode.removeAttribute('j-html');
+      returnNode.setAttribute('j-html-',theAttribute);
       returnNode.innerHTML = jxTryEval(theAttribute,data,hErr)
     } else buildWithChildren(node,data,returnNode)
     return returnNode
