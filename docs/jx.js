@@ -7,9 +7,8 @@ let jx = (tbx=window.document)=>{
   const s2o=(s,h)=>jxTryEval(`(${s})`,h)
   const o2s=(o,h)=>tryx(()=>JSON.stringify(o),h)
   function jxBuild(node, data={}) {
-    if (node.nodeType === Node.TEXT_NODE){
-      let txt = node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxTryEval(expr,data,ex=>'['+ex+']'))
-      return tbx.createTextNode(txt)
+    if (node.nodeType === 3){//Node.TEXT_NODE
+      return tbx.createTextNode(node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxTryEval(expr,data,ex=>'['+ex+']')))
     }
     if (node.tagName=='TEMPLATE'||node.tagName=='SCRIPT') node = s2bdy(node.innerHTML)
     let returnNode = node.cloneNode?.()
@@ -20,8 +19,10 @@ let jx = (tbx=window.document)=>{
     if (theAttribute=node.getAttribute?.(':value'))
       returnNode.setAttribute?.('value',jxTryEval(theAttribute,data,hWarn));
     node.attributes && [...node.attributes].forEach(attr=>{
-      (attr.name.startsWith('@')) && returnNode.addEventListener(attr.name.slice(1),function(event){
-          return new Function('data', 'event', attr.value).call(this, data, event);
+      attr.name.startsWith('@') && returnNode.addEventListener(attr.name.slice(1),function(event){
+          var obj = jxTryEval(attr.value,this,true);
+          if (typeof obj=='function') return tryx(()=>obj(event),true)
+          return obj
       });
     });
     if (theAttribute = node.getAttribute?.('j-for')) {
@@ -63,8 +64,8 @@ let jx = (tbx=window.document)=>{
   }
   function maybeDifferent(node1, node2) {
     if (node1.nodeType !== node2.nodeType) return true;
-    if (node1.nodeType === Node.ELEMENT_NODE && node1.tagName !== node2.tagName) return true;
-    if (node1.nodeType == Node.TEXT_NODE && node1.textContent != node2.textContent) return true; 
+    if (node1.nodeType === 1 && node1.tagName !== node2.tagName) return true;//Node.ELEMENT_NODE
+    if (node1.nodeType == 3 && node1.textContent != node2.textContent) return true;//Node.TEXT_NODE
     if (node1.childNodes.length != node2.childNodes.length) return true;
     if (!node1.attributes || !node2.attributes) return false;
     if (node1.attributes.length !== node2.attributes.length) return true;

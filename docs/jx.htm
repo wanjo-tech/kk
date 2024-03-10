@@ -50,7 +50,7 @@ var t1=now()
 <br/>
 <!-- <template id='tpl'> <script>console.log(1234)</script> </template> -->
 <textarea id='tplStage' style="border:1px solid;min-width:640px;min-height:150px">
-<br/>test @change <input @change='alert(this.value)' value='abcd'/>
+<br/>test @change <input @change='(console.log("on change=>",this.value,event),true)' value='abcd'/>
 <h3>thisDate={{thisDate}}</h3>
 <div j-for="val,key,idx in wtf"><li>{{ idx+","+key+":"+val }}</li></div>
 <font>OK {{ new Date() }}</font>
