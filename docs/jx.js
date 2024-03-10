@@ -1,4 +1,4 @@
-//DOC&TEST https://kk.datakk.com/jx.htm
+//https://kk.datakk.com/jx.htm
 let jx = (tbx=window.document)=>{
   const tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}}
   const jev=function(){with(this)return eval(arguments[0])}
