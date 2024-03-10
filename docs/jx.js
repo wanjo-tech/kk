@@ -1,6 +1,4 @@
-//the REAL SMALLEST web-js-template engine by Wanjo; For Chrome45(ECMAScript2015)+
 //DOC&TEST https://kk.datakk.com/jx.htm
-//TODO j-bind, j-model @onchange etc..
 let jx = (tbx=window.document)=>{
   const tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}}
   const jev=function(){with(this)return eval(arguments[0])}
@@ -17,7 +15,12 @@ let jx = (tbx=window.document)=>{
     let buildWithChildren=(n,dt)=>(n && n.childNodes.forEach(child=>returnNode.appendChild(jxBuild(child,dt))))
     let theAttribute
     if (theAttribute=node.getAttribute?.(':value'))
-      returnNode.setAttribute?.('value',jxTryEval(theAttribute,data,hWarn))
+      returnNode.setAttribute?.('value',jxTryEval(theAttribute,data,hWarn));
+    node.attributes && [...node.attributes].forEach(attr=>{
+      (attr.name.startsWith('@')) && returnNode.addEventListener(attr.name.slice(1),function(event){
+          return new Function('data', 'event', attr.value).call(this, data, event);
+      });
+    });
     if (node.hasAttribute?.('j-expr')){
       let txt = node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxTryEval(expr,data,ex=>'['+ex+']'))
       if (txt) returnNode.appendChild(tbx.createTextNode(txt))
@@ -92,4 +95,3 @@ let jx = (tbx=window.document)=>{
   let jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src','innerHTML'].filter(a=>el[a]).map(a=>({[a]:el[a]})))
   return {jxCloneJs,jxEval,jxTryEval,jxBuild,jxUpsert, tryx,s2o,o2s,s2bdy,s2el,s2ela}
 }
-
