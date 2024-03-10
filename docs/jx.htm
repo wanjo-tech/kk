@@ -41,7 +41,7 @@ var t1=now()
   stageDebug.value+=`=>Render ${t1-t0}`
 }
 </script>
-<h2> Simple Pattern:</h2>
+<h2>Design Pattern:</h2>
 <h3>
 (event,data)=>(update(data,event),render(template,data))
 </h3>
@@ -50,9 +50,7 @@ var t1=now()
 <br/>
 <!-- <template id='tpl'> <script>console.log(1234)</script> </template> -->
 <textarea id='tplStage' style="border:1px solid;min-width:640px;min-height:150px">
-thisDate:<input j-bind='thisDate'></input>
-test bind:<input j-bind='thisDate'></input>
-<br/>test @change <input @change='console.log(this.value)' value='abcd'/>
+<br/>test @change <input @change='alert(this.value)' value='abcd'/>
 <h3 j-expr>{{thisDate}}</h3>
 <div j-for="val,key,idx in wtf"><li><span j-eval>idx+","+key+":"+val</span></li></div>
 <font>不解析内部 {{ new Date() }}</font>
