@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta name="google" content="notranslate"/>
+<!--
+<link rel="icon" href="datakk.png" />
+-->
+<link rel="icon" href="favicon.ico"></link>
 <title>Loading...</title>
 </head>
 <body>
@@ -17,18 +21,92 @@
 </svg>
 </div>
 <h1>KK Control Panel</h1>
+<style>
+.ftdev {font-family: Menlo, Consolas, Monaco, monospace;}
+input {font-family: Menlo, Consolas, Monaco, monospace !important;}
+</style>
 IP=<span id='divIP'></span>
 <hr/>
+<!--
+<script src='https://kk.datakk.com/jx.js' remark='tiny tpl engine'></script>
+-->
+<script src='../docs/jx.js' remark='local tiny tpl engine'></script>
 <script src='bizcdp.js'></script>
+
+<template id=tplConfigK>
+  PASS: <input size=8 type=password :value="pass"
+onchange="console.log(event.srcElement.defaultValue,'=>',this.value);data_k['pass']=this.value"
+></input>
+  KEY: <input size=8 type=password :value="key"
+onchange="console.log(event.srcElement.defaultValue,'=>',this.value);data_k['key']=this.value"
+></input>
+  SECRET: <input size=8 type=password :value="secret"
+onchange="console.log(event.srcElement.defaultValue,'=>',this.value);data_k['secret']=this.value"
+></input>
+</template>
+
+<h2> <a href='cdp_kx.html' target=_blank>kx</a> </h2>
+
 <script>
 const sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
 var myfetch = (u,body,ext_headers={}) => fetch(u,{method:body===undefined?'GET':'POST',headers:{...ext_headers},body:body===undefined?undefined:((typeof body=='string')?body:JSON.stringify(body))})
 var myfetch_text = async(u,body,ext_headers={})=>(await myfetch(u,body,ext_headers)).text();
 var myfetch_json = async(u,body,ext_headers={})=>(await myfetch(u,body,ext_headers)).json();
 
+//jxUpsert(divStage,jxBuild(s2bdy(tplStage.value),jxTryEval(`(${stageData.value})`)))
+var {jxUpsert,jxBuild,tryx,s2o,o2s} = jx();
+
+var biz_k;
+var kvs = (k,v)=>{
+  if (typeof v!='undefined'){
+    console.log('save',k,o2s(v))
+    localStorage[k]=o2s(v)
+  }
+  return tryx(()=>s2o(localStorage[k]))
+}
+
+var data_k = kvs('data_k') || {}
+function save_config_k(){
+  console.log('save_config_k',data_k)
+  kvs('data_k',data_k)
+}
+function load_config_k(){
+  console.log('load_config_k',data_k)
+  //jxUpsert(spnConfig,jxBuild(tplConfigK,data_k))
+  //var api_entry = web_entry1+web_entry2
+  //biz_k = bizcls(api_entry,data_k.pass,data_k.key,data_k.secret)
+}
+
 (async()=>{
  divLoading.style.display='none'
  divIP.innerHTML = await myfetch_text('https://api.ipify.org')
  document.title='KK Control Panel'
+
+  load_config_k()
 })()
+
+////////////////
+async function test0(){
+  jxUpsert(stageTest0,jxBuild(tplTest0,{}))
+}
+async function test1(){
+  jxUpsert(stageTest1,jxBuild(tplTest1,{}))
+}
+async function test2(){
+  jxUpsert(stageTest2,jxBuild(tplTest2,{}))
+}
 </script>
+<br/><input value=test0 type=button onclick='test0()'></input><span id=stageTest0></span>
+<br/><input value=test1 type=button onclick='test1()'></input><span id=stageTest1></span>
+<br/><input value=test2 type=button onclick='test2()'></input><span id=stageTest2></span>
+<template id='tplTest0'>
+<h3 j-expr>TEST0 {{ new Date() }}</h3>
+</template>
+<script id='tplTest1' type='template'>
+<h3 j-expr>TEST1 {{ new Date() }}</h3>
+</script>
+
+<div id='tplTest2' style='display:none'>
+<h3 j-expr>TEST2 {{ new Date() }}</h3>
+</div>
+
