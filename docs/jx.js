@@ -9,11 +9,11 @@ let jx = (tbx=window.document)=>{
   function jxBuild(node, data={}) {
     if (node.nodeType === Node.TEXT_NODE) return tbx.createTextNode(node.textContent, data)
     if (node.tagName=='TEMPLATE'||node.tagName=='SCRIPT') node = s2bdy(node.innerHTML)
-    const returnNode = node.cloneNode?.()
+    let returnNode = node.cloneNode?.()
     let hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),'')
     let hErr = ex=>(returnNode.setAttribute?.('j-err',''+ex),'['+ex+']')
-    let buildWithChildren=(n,dt)=>(n && n.childNodes.forEach(child=>returnNode.appendChild(jxBuild(child,dt))))
-    let theAttribute
+    let buildWithChildren=(n,dt,X)=>(n && n.childNodes.forEach(child=>X.appendChild(jxBuild(child,dt))))
+    let theAttribute;
     if (theAttribute=node.getAttribute?.(':value'))
       returnNode.setAttribute?.('value',jxTryEval(theAttribute,data,hWarn));
     node.attributes && [...node.attributes].forEach(attr=>{
@@ -21,7 +21,29 @@ let jx = (tbx=window.document)=>{
           return new Function('data', 'event', attr.value).call(this, data, event);
       });
     });
-    if (node.hasAttribute?.('j-expr')){
+    if (theAttribute = node.getAttribute?.('j-for')) {
+      const match = theAttribute.match(/^\(?(\w+)(?:,\s*(\w+))?(?:,\s*(\w+))?[\)\s]?\s*in\s*(.+)$/)
+      if (!match) {
+        returnNode.setAttribute?.('j-err','for')
+      }else{
+        const [_,valVar,keyVar,idxVar,itemsStr] = match
+        const items = jxTryEval(itemsStr,data) || {}
+        returnNode = tbx.createDocumentFragment() //tbx.createElement('div') //
+        Object.entries(items).forEach(([key, val], idx)=>{
+          const loopData={...data,[valVar]:val,...(keyVar&&{[keyVar]:key}),...(idxVar&&{[idxVar]:idx})}
+          var newNode = node.cloneNode();
+          newNode.removeAttribute('j-for');
+          buildWithChildren(node,loopData,newNode)
+          returnNode.appendChild(newNode)
+        })
+      }
+    } else if (node.hasAttribute?.('j-else')) { //SKIP for handled in j-if branch
+    } else if (theAttribute=node.getAttribute?.('j-if')) {
+      const eval_result = !!jxTryEval(theAttribute,data,hWarn)
+      returnNode.setAttribute?.('j-result',eval_result)
+      let resultNode = eval_result ? node:node.querySelector('[j-else]');
+      buildWithChildren(resultNode,data,returnNode)
+    } else if (node.hasAttribute?.('j-expr')){
       let txt = node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxTryEval(expr,data,ex=>'['+ex+']'))
       if (txt) returnNode.appendChild(tbx.createTextNode(txt))
       else node.setAttribute?.('j-err','expr')
@@ -32,25 +54,7 @@ let jx = (tbx=window.document)=>{
       returnNode.textContent = jxTryEval(theAttribute,data,hErr)
     } else if (theAttribute=node.getAttribute?.('j-html')) {
       returnNode.innerHTML = jxTryEval(theAttribute,data,hErr)
-    } else if (node.hasAttribute?.('j-else')) { //SKIP for handled in j-if branch
-    } else if (theAttribute=node.getAttribute?.('j-if')) {
-      const eval_result = !!jxTryEval(theAttribute,data,hWarn)
-      returnNode.setAttribute?.('j-result',eval_result)
-      let resultNode = eval_result ? node:node.querySelector('[j-else]');
-      buildWithChildren(resultNode,data)
-    } else if (theAttribute = node.getAttribute?.('j-for')) {
-      const match = theAttribute.match(/^\(?(\w+)(?:,\s*(\w+))?(?:,\s*(\w+))?[\)\s]?\s*in\s*(\w+)$/)
-      if (!match) {
-        returnNode.setAttribute?.('j-err','for')
-      }else{
-        const [_,valVar,keyVar,idxVar,itemsVar] = match
-        const items = data[itemsVar] || {}
-        Object.entries(items).forEach(([key, val], idx)=>{
-          const loopData={...data,[valVar]:val,...(keyVar&&{[keyVar]:key}),...(idxVar&&{[idxVar]:idx})}
-          buildWithChildren(node,loopData)
-        })
-      }
-    } else buildWithChildren(node,data)
+    } else buildWithChildren(node,data,returnNode)
     return returnNode
   }
   function maybeDifferent(node1, node2) {
