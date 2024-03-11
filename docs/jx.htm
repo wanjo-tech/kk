@@ -2,9 +2,77 @@
 <h3>DOC&TESTER=<a href="https://kk.datakk.com/jx.htm" target=_blank>https://kk.datakk.com/jx.htm</a><h3>
 <h3>CODE=<a href="https://github.com/wanjo-tech/kk/blob/main/docs/jx.js" target=_blank>https://github.com/wanjo-tech/kk/blob/main/docs/jx.js</a><h3>
 <h3>CDN=<a href="https://static.datakk.com/jx.js" target=_blank>https://static.datakk.com/jx.js</a><h3>
-<h3>DESIGN_PATTERN=(evt,data)=>UPSERT(target,BUILD(tpl,UPDATE(data,event)))</h3>
+<h3>PARADIGM=(evt,data)=>UPSERT(target,<font style="background-color:#EEE">BUILD(tpl,UPDATE(data,event))</font>)</h3>
 <h3>DEBUG=[...document.querySelectorAll('[j-err],[j-warn]')].map(console.log)</h3>
 <script src='jx.js'></script>
+<hr/>
+<button onclick='Build()'>Build</button> <button onclick='Render()'>Render</button> tpl=&nbsp;
+<a href='javascript:testIf()'>j-if</a>&nbsp;
+<a href='javascript:testFor()'>j-for</a>&nbsp;
+<a href='javascript:testTestVar()'>var</a>
+<a href='javascript:testFull()'>default</a>&nbsp;
+<br/>
+<template id='tplTestVar'>thisDate={{thisDate}}
+<div>
+  <div>{{ this.y=6;x=3 }},x={{x}},y={{y}},z={{ x+y}}</div>
+  <div>test {{x}} or {{this.x}}</div>
+</div>
+<div>test x={{x}} or this.x={{this.x}} or window.x={{window.x}}</div>
+</template>
+<template id='tplFor'>
+thisDate={{thisDate}}
+<div j-for='v,k,i in data'>
+<div>v={{v}},k={{k}},i={{i}}</div>
+<div>j-text <span j-text="v+','+k+','+i"></span></div>
+</div>
+</template>
+<template id='tplIf'>
+thisDate={{thisDate}}
+<div j-if='f1a'>f1a={{f1a}}
+<span j-else>f1a={{f1a}}</span>
+</div>
+<div j-html="'<h3>test j-html</h3>'">should-not-see-this</div>
+</template>
+<textarea id='tplStage' style="border:1px solid;min-width:640px;min-height:150px" spellcheck="false">
+<br/>test @change <input @change='(console.log("on change=>",this.value,event),true)' value='abcd'/>
+<h3>thisDate={{thisDate}}</h3>
+<div j-for="val,key,idx in wtf"><li>{{ idx+","+key+":"+val }}</li></div>
+<font>OK {{ new Date() }}</font>
+<font>KO {{ new XXX() }}</font>
+<div j-if="f1">
+  <font color=red>L1-if</font>
+  <div j-else><font color=blue>L1-else</font></div>
+</div>
+<div j-if="true"><font color=green>L1-true
+  <div j-if="f2a">L2-f2a</div>
+  <div j-if="f2b">L2-f2b</div>
+</font></div>
+<div j-for="ERR in items"><li>{{ idx+","+key+":"+val }}</li></div>
+<div j-for="(val,key,idx) in items"><li>{{ idx+","+key+":"+val }}</li></div>
+<div j-for="val,key,idx in items"><li>{{ idx+","+key+":"+val }}</li></div>
+<div j-for="(val,key,idx) in itemsb">
+  <li>{{ idx+","+key+":"+val }}</li>
+</div>
+<div j-for="(val,key) in itemsb"><li>{{key+":"+val}}</li></div>
+<div j-for="val,key in itemsb"><li>{{key+":"+val}}</li></div>
+<div j-for="(val) in itemsb"><li>{{val}}</li></div>
+<div j-for="val in itemsb"><li>{{val}}</li></div>
+<div j-for="val in itemsb"><li>{{TestSyntaxError2}}</li></div>
+test j-text
+<div j-for="val in itemsb" j-text="val"></div>
+
+</textarea>
+<br/>data=<br/>
+<textarea id='stageData' style='border:1px solid;min-width:640px;min-height:50px' spellcheck="false">
+{thisDate:new Date(), items: ["Apple", "Banana", "Cherry"], itemsb:{Apple:222,Banana:333,Cherry:444}, f2b:true}
+</textarea>
+<br/>debug=<br/>
+<textarea id='stageDebug' style='border:1px solid;min-width:640px;min-height:30px' spellcheck="false"></textarea>
+<br/>Build=<br/>
+<textarea id='stageCode' style='border:1px solid;min-width:640px;min-height:70px'></textarea>
+<br/>render=<br/>
+<div style='border:1px solid;width:99%;' id='divStage'></div>
+
 <script>
 var {s2bdy,jxTryEval,jxBuild,jxUpsert,s2el,s2o,o2s}=jx()
 var now = () => new Date().getTime()/1000;
@@ -49,56 +117,28 @@ function testIf(){
   stageDebug.value=''
   Render()
 }
+function testFor(){
+  stageData.value = `{thisDate:new Date(),data:{a:11,b:22,c:33}}` //o2s({f1a:(Math.random()>0.2),thisDate:new Date()})
+  tplStage.value = tplFor.innerHTML
+  stageDebug.value=''
+  Render()
+}
+function testTestVar(){
+  stageData.value = `{thisDate:new Date()}`
+  tplStage.value = tplTestVar.innerHTML
+  stageDebug.value=''
+  Render()
+}
+var strDate = ''+stageData.value
+var tplFull = ''+tplStage.value
+function testFull(){
+  stageData.value = strDate;//`{thisDate:new Date(),data:{a:11,b:22,c:33}}` //o2s({f1a:(Math.random()>0.2),thisDate:new Date()})
+  tplStage.value = tplFull
+  stageDebug.value=''
+  Render()
+}
 </script>
-<hr/>
-<button onclick='Build()'>Build</button> <button onclick='Render()'>Render</button> tpl=
-<a href='javascript:testIf()'>j-if</a>
-<br/>
-<template id='tplIf'>
-thisDate={{thisDate}}
-<div j-if='f1a'>f1a={{f1a}}
-<span j-else>f1a={{f1a}}
-</div>
-</template>
-<textarea id='tplStage' style="border:1px solid;min-width:640px;min-height:150px">
-<br/>test @change <input @change='(console.log("on change=>",this.value,event),true)' value='abcd'/>
-<h3>thisDate={{thisDate}}</h3>
-<div j-for="val,key,idx in wtf"><li>{{ idx+","+key+":"+val }}</li></div>
-<font>OK {{ new Date() }}</font>
-<font>KO {{ new XXX() }}</font>
-<div j-if="f1">
-  <font color=red>L1-if</font>
-  <div j-else><font color=blue>L1-else</font></div>
-</div>
-<div j-if="true"><font color=green>L1-true
-  <div j-if="f2a">L2-f2a</div>
-  <div j-if="f2b">L2-f2b</div>
-</font></div>
-<div j-for="ERR in items"><li>{{ idx+","+key+":"+val }}</li></div>
-<div j-for="(val,key,idx) in items"><li>{{ idx+","+key+":"+val }}</li></div>
-<div j-for="val,key,idx in items"><li>{{ idx+","+key+":"+val }}</li></div>
-<div j-for="(val,key,idx) in itemsb">
-  <li>{{ idx+","+key+":"+val }}</li>
-</div>
-<div j-for="(val,key) in itemsb"><li>{{key+":"+val}}</li></div>
-<div j-for="val,key in itemsb"><li>{{key+":"+val}}</li></div>
-<div j-for="(val) in itemsb"><li>{{val}}</li></div>
-<div j-for="val in itemsb"><li>{{val}}</li></div>
-<div j-for="val in itemsb"><li>{{TestSyntaxError2}}</li></div>
-test j-text
-<div j-for="val in itemsb" j-text="val"></div>
 
-</textarea>
-<br/>data=<br/>
-<textarea id='stageData' style='border:1px solid;min-width:640px;min-height:50px'>
-{thisDate:new Date(), items: ["Apple", "Banana", "Cherry"], itemsb:{Apple:222,Banana:333,Cherry:444}, f2b:true}
-</textarea>
-<br/>debug=<br/>
-<textarea id='stageDebug' style='border:1px solid;min-width:640px;min-height:30px'></textarea>
-<br/>Build=<br/>
-<textarea id='stageCode' style='border:1px solid;min-width:640px;min-height:150px'></textarea>
-<br/>render=<br/>
-<div style='border:1px solid;width:99%;' id='divStage'></div>
 <!--
 cancelled:
     if (theAttribute=node.getAttribute?.('j-bind')) {
