@@ -1,4 +1,5 @@
-<h1>jx=TINY WEB-JS TEMPLATE ENGINE by datakk</h1>
+<body>
+<h1>JX=TINY WEB-JS TEMPLATE ENGINE by datakk</h1>
 <h3>DOC&TESTER=<a href="https://kk.datakk.com/jx.htm" target=_blank>https://kk.datakk.com/jx.htm</a><h3>
 <h3>CODE=<a href="https://github.com/wanjo-tech/kk/blob/main/docs/jx.js" target=_blank>https://github.com/wanjo-tech/kk/blob/main/docs/jx.js</a><h3>
 <h3>CDN=<a href="https://static.datakk.com/jx.js" target=_blank>https://static.datakk.com/jx.js</a><h3>
@@ -74,7 +75,7 @@ test j-text
 <div style='border:1px solid;width:99%;' id='divStage'></div>
 
 <script>
-var {s2bdy,jxTryEval,jxBuild,jxUpsert,s2el,s2o,o2s}=jx()
+var {s2bdy,jxTryEval,jxRender,jxBuild,jxUpsert,s2el,s2o,o2s}=jx()
 var now = () => new Date().getTime()/1000;
 var gData = {}
 function Build(){
@@ -90,7 +91,6 @@ function Build(){
 var t0=now()
   var elTemplate = s2bdy(template);
 var t1=now()
-  //var built = jxBuild(elTemplate, data);
   var built = jxBuild(elTemplate, gData);
 var t2=now()
   var s = built.innerHTML
@@ -105,8 +105,8 @@ var t0=now()
   //jxUpsert(divStage,Build())
   var data = jxTryEval(`(${stageData.value})`)
   Object.assign(gData,data)
-  //jxUpsert(divStage,jxBuild(s2bdy(tplStage.value),jxTryEval(`(${stageData.value})`)))
-  jxUpsert(divStage,jxBuild(s2bdy(tplStage.value),gData))
+  //jxUpsert(divStage,jxBuild(s2bdy(tplStage.value),gData))
+  jxRender(divStage,tplStage.value,gData)
 var t1=now()
   //stageDebug.textContent+=`=>Render ${t1-t0}`
   stageDebug.value+=`=>Render ${t1-t0}`
@@ -159,3 +159,4 @@ console.log('binding',binding)
     }
 
 -->
+</body>
