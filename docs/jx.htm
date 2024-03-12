@@ -29,9 +29,8 @@ thisDate={{thisDate}}
 </template>
 <template id='tplIf'>
 thisDate={{thisDate}}
-<div j-if='f1a'>f1a={{f1a}}
-<span j-else>f1a={{f1a}}</span>
-</div>
+<div j-if='f1a'>j-if f1a={{f1a}}</div>
+<div j-else>j-else f1a={{typeof fla}}</div>
 <div j-html="'<h3>test j-html</h3>'">should-not-see-this</div>
 </template>
 <textarea id='tplStage' style="border:1px solid;min-width:640px;min-height:150px" spellcheck="false">
@@ -40,10 +39,8 @@ thisDate={{thisDate}}
 <div j-for="val,key,idx in wtf"><li>{{ idx+","+key+":"+val }}</li></div>
 <font>OK {{ new Date() }}</font>
 <font>KO {{ new XXX() }}</font>
-<div j-if="f1">
-  <font color=red>L1-if</font>
-  <div j-else><font color=blue>L1-else</font></div>
-</div>
+<div j-if="f1"> <font color=red>L1-if</font> </div>
+<div j-else><font color=blue>L1-else</font></div>
 <div j-if="true"><font color=green>L1-true
   <div j-if="f2a">L2-f2a</div>
   <div j-if="f2b">L2-f2b</div>

@@ -9,7 +9,7 @@ let jx = (tbx=window.document)=>{
   s2bdy=s=>(doc=tbx.implementation.createHTMLDocument(),doc.body.innerHTML=s,doc.body),
   s2ela=s=>[...s2bdy(s).childNodes],
   s2el=(s)=>s2bdy(s).childNodes[0],
-  jxExtend=(o)=>((typeof o=='object')?o2s(o):(o||'')),
+  jxExtend=(o)=>((''+o)==='[object Object]'?o2s(o):(o||'')),
   jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src','innerHTML'].filter(a=>el[a]).map(a=>({[a]:el[a]})));
   function jxBuild(node, data={}){
     if (node.nodeType === 3)//TEXT_NODE
@@ -47,13 +47,24 @@ theAttribute;
           returnNode.appendChild(jxBuild(nn,loopData))
         })
       }
-    } else if (node.hasAttribute?.('j-else')) { //SKIP for handled in j-if branch
-      renAttribute(returnNode,'j-else');
     } else if (theAttribute=node.getAttribute?.('j-if')) {
       const eval_result = !!jxTryEval(theAttribute,data,hWarn)
-      renAttribute(returnNode,'j-if',eval_result);
-      let resultNode = eval_result ? node:node.querySelector('[j-else]');
-      buildWithChildren(resultNode,data,returnNode)
+      var hasParentNode = !!node.parentNode
+      var elseNode = hasParentNode && node.parentNode.querySelector('[j-else]');
+      if (hasParentNode && elseNode) node.parentNode.removeChild(elseNode)
+      if (hasParentNode) node.parentNode.removeChild(node)
+      if (eval_result){
+        var nn = node.cloneNode(true)
+        renAttribute(nn,'j-if',theAttribute);
+        return jxBuild(nn,data)
+      }else{
+        if (elseNode){
+          var nn = elseNode.cloneNode(true)
+          renAttribute(nn,'j-else',theAttribute);
+          return jxBuild(nn,data)
+        }
+      }
+    } else if (node.hasAttribute?.('j-else')) {
     } else if (theAttribute=node.getAttribute?.('j-text')) {
       renAttribute(returnNode,'j-text',theAttribute);
       returnNode.textContent = jxExtend(jxTryEval(theAttribute,data,hErr))
