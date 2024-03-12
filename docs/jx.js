@@ -1,97 +1,109 @@
-//https://kk.datakk.com/jx.htm
+//kk.datakk.com/jx.htm
 let jx = (tbx=window.document)=>{
-  const tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}}
-  const jev=function(){with(this)return eval(arguments[0])}
-  const jxEval=(js,ctx)=>jev.bind(ctx)(js)
-  const jxTryEval=(txt,ctx,h)=>tryx(()=>jxEval(txt,ctx),h)
-  const s2o=(s,h)=>jxTryEval(`(${s})`,h)
-  const o2s=(o,h)=>tryx(()=>JSON.stringify(o),h)
-  function jxBuild(node, data={}) {
-    if (node.nodeType === Node.TEXT_NODE) return tbx.createTextNode(node.textContent, data)
-    if (node.tagName=='TEMPLATE'||node.tagName=='SCRIPT') node = s2bdy(node.innerHTML)
-    const returnNode = node.cloneNode?.()
-    let hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),'')
-    let hErr = ex=>(returnNode.setAttribute?.('j-err',''+ex),'['+ex+']')
-    let buildWithChildren=(n,dt)=>(n && n.childNodes.forEach(child=>returnNode.appendChild(jxBuild(child,dt))))
-    let theAttribute
-    if (theAttribute=node.getAttribute?.(':value'))
-      returnNode.setAttribute?.('value',jxTryEval(theAttribute,data,hWarn));
+  const tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}},
+  jev=function(){with(this)return eval(arguments[0])},
+  jxEval=(js,ctx)=>jev.bind(ctx)(js),
+  jxTryEval=(txt,ctx,h)=>tryx(()=>jxEval(txt,ctx),h),
+  s2o=(s,h)=>jxTryEval(`(${s})`,h),
+  o2s=(o,h)=>tryx(()=>JSON.stringify(o),h),
+  s2bdy=s=>(doc=tbx.implementation.createHTMLDocument(),doc.body.innerHTML=s,doc.body),
+  s2ela=s=>[...s2bdy(s).childNodes],
+  s2el=(s)=>s2bdy(s).childNodes[0],
+  jxExtend=(o)=>((''+o)==='[object Object]'?o2s(o):(o||'')),
+  jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src','innerHTML'].filter(a=>el[a]).map(a=>({[a]:el[a]})));
+  function jxBuild(node, data={}){
+    if (node.nodeType === 3)//TEXT_NODE
+      return tbx.createTextNode(node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxExtend(jxTryEval(expr,data,ex=>'['+ex+']'))));
+    if (node.tagName=='TEMPLATE'||node.tagName=='SCRIPT') node = s2bdy(node.innerHTML);
+    let returnNode = node.cloneNode?.(),
+hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),''),
+hErr = ex=>(returnNode.setAttribute?.('j-err',''+ex),'['+ex+']'),
+buildWithChildren=(n,dt,X)=>(n && n.childNodes.forEach(child=>X.appendChild(jxBuild(child,dt)))),
+renAttribute=(d,n,v='',n2)=>(d.removeAttribute(n),d.setAttribute(n2===undefined?(n+'-'):n2,v)),
+theAttribute;
     node.attributes && [...node.attributes].forEach(attr=>{
-      (attr.name.startsWith('@')) && returnNode.addEventListener(attr.name.slice(1),function(event){
-          return new Function('data', 'event', attr.value).call(this, data, event);
-      });
+      attr.name.startsWith(':') && renAttribute(returnNode,attr.name,jxTryEval(attr.value,data,hWarn),attr.name.slice(1));
+      var handler = function(event){
+          this.data = data;
+          this.handler = handler;
+          var obj = jxTryEval(attr.value,this,true);
+          return (typeof obj=='function') ? tryx(()=>obj(event),true) : obj
+      };
+      attr.name.startsWith('@') && returnNode.addEventListener(attr.name.slice(1),handler);
     });
-    if (node.hasAttribute?.('j-expr')){
-      let txt = node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxTryEval(expr,data,ex=>'['+ex+']'))
-      if (txt) returnNode.appendChild(tbx.createTextNode(txt))
-      else node.setAttribute?.('j-err','expr')
-    }else if (node.hasAttribute?.('j-eval')){
-      let txt = jxTryEval(node.textContent,data,hErr)
-      returnNode.appendChild(tbx.createTextNode(txt))
-    } else if (theAttribute=node.getAttribute?.('j-text')) {
-      returnNode.textContent = jxTryEval(theAttribute,data,hErr)
-    } else if (theAttribute=node.getAttribute?.('j-html')) {
-      returnNode.innerHTML = jxTryEval(theAttribute,data,hErr)
-    } else if (node.hasAttribute?.('j-else')) { //SKIP for handled in j-if branch
-    } else if (theAttribute=node.getAttribute?.('j-if')) {
-      const eval_result = !!jxTryEval(theAttribute,data,hWarn)
-      returnNode.setAttribute?.('j-result',eval_result)
-      let resultNode = eval_result ? node:node.querySelector('[j-else]');
-      buildWithChildren(resultNode,data)
-    } else if (theAttribute = node.getAttribute?.('j-for')) {
-      const match = theAttribute.match(/^\(?(\w+)(?:,\s*(\w+))?(?:,\s*(\w+))?[\)\s]?\s*in\s*(\w+)$/)
+    if (theAttribute = node.getAttribute?.('j-for')) {
+      const match = theAttribute.match(/^\(?(\w+)(?:,\s*(\w+))?(?:,\s*(\w+))?[\)\s]?\s*in\s*(.+)$/)
       if (!match) {
         returnNode.setAttribute?.('j-err','for')
       }else{
-        const [_,valVar,keyVar,idxVar,itemsVar] = match
-        const items = data[itemsVar] || {}
+        const [_,valVar,keyVar,idxVar,itemsStr] = match
+        const items = jxTryEval(itemsStr,data) || {}
+        returnNode = tbx.createDocumentFragment() //tbx.createElement('div') //
         Object.entries(items).forEach(([key, val], idx)=>{
           const loopData={...data,[valVar]:val,...(keyVar&&{[keyVar]:key}),...(idxVar&&{[idxVar]:idx})}
-          buildWithChildren(node,loopData)
+          var nn = node.cloneNode();
+          renAttribute(nn,'j-for',theAttribute);
+          buildWithChildren(node,loopData,nn)
+          returnNode.appendChild(jxBuild(nn,loopData))
         })
       }
-    } else buildWithChildren(node,data)
+    } else if (theAttribute=node.getAttribute?.('j-if')) {
+      const eval_result = !!jxTryEval(theAttribute,data,hWarn)
+      var hasParentNode = !!node.parentNode
+      var elseNode = hasParentNode && node.parentNode.querySelector('[j-else]');
+      if (hasParentNode && elseNode) node.parentNode.removeChild(elseNode)
+      if (hasParentNode) node.parentNode.removeChild(node)
+      if (eval_result){
+        var nn = node.cloneNode(true)
+        renAttribute(nn,'j-if',theAttribute);
+        return jxBuild(nn,data)
+      }else{
+        if (elseNode){
+          var nn = elseNode.cloneNode(true)
+          renAttribute(nn,'j-else',theAttribute);
+          return jxBuild(nn,data)
+        }
+      }
+    } else if (node.hasAttribute?.('j-else')) {
+    } else if (theAttribute=node.getAttribute?.('j-text')) {
+      renAttribute(returnNode,'j-text',theAttribute);
+      returnNode.textContent = jxExtend(jxTryEval(theAttribute,data,hErr))
+    } else if (theAttribute=node.getAttribute?.('j-html')) {
+      renAttribute(returnNode,'j-html',theAttribute);
+      returnNode.innerHTML = jxExtend(jxTryEval(theAttribute,data,hErr))
+    } else buildWithChildren(node,data,returnNode)
     return returnNode
   }
   function maybeDifferent(node1, node2) {
     if (node1.nodeType !== node2.nodeType) return true;
-    if (node1.nodeType === Node.ELEMENT_NODE && node1.tagName !== node2.tagName) return true;
-    if (node1.nodeType == Node.TEXT_NODE && node1.textContent != node2.textContent) return true; 
+    if (node1.nodeType === 1 && node1.tagName !== node2.tagName) return true;//ELEMENT_NODE
+    if (node1.nodeType == 3 && node1.textContent != node2.textContent) return true;//TEXT_NODE
     if (node1.childNodes.length != node2.childNodes.length) return true;
     if (!node1.attributes || !node2.attributes) return false;
     if (node1.attributes.length !== node2.attributes.length) return true;
-    for (let i = 0; i < node1.attributes.length; i++) {
-      const attrName = node1.attributes[i].name;
-      if (node1.getAttribute(attrName) !== node2.getAttribute(attrName)) return true;
-    }
-    return false;
+    return [...node1.attributes].some(({name}=attr)=>(node1.getAttribute(name)!==node2.getAttribute(name)))
   }
-  //WARNING: the newNode will be touched (so please make it cloned by jxBuild())
-  function jxUpsert(oldNode, newNode) {
-    const oldChildren = [...oldNode.childNodes||[]]
-    const newChildren = [...newNode.childNodes||[]]
-    const maxLength = Math.max(oldChildren.length, newChildren.length)
+  //WARNING: the nn will be touched (so please make it cloned by jxBuild())
+  function jxUpsert(pn, nn){
+    const pca = [...pn.childNodes||[]]
+    const nca = [...nn.childNodes||[]]
+    const maxLength = Math.max(pca.length, nca.length)
     for (let i = 0; i < maxLength; i++) {
-      const oldChild = oldChildren[i]
-      let newChild = newChildren[i]
-      if (newChild && newChild.tagName=='SCRIPT' && (!newChild.type||newChild.type=='text/javascript')){
-        newChild = jxCloneJs(newChild) // trick for js el
-        if (oldChild) oldNode.replaceChild(newChild,oldChild)
-        else oldNode.appendChild(newChild)
-      }else if (!oldChild && newChild) {
-        oldNode.appendChild(newChild)
-      } else if (oldChild && !newChild) {
-        oldNode.removeChild(oldChild)
-      } else if (maybeDifferent(oldChild,newChild)) {
-        oldNode.replaceChild(newChild, oldChild)
-      } else {
-        jxUpsert(oldChild, newChild)
-      }
+      let pc=pca[i],nc=nca[i]
+      if (nc && nc.tagName=='SCRIPT' && (!nc.type||nc.type=='text/javascript')){
+        nc = jxCloneJs(nc);
+        if (pc) pn.replaceChild(nc,pc);else pn.appendChild(nc)
+      }else if (!pc && nc) pn.appendChild(nc);
+      else if (pc && !nc) pn.removeChild(pc);
+      else if (maybeDifferent(pc,nc)) pn.replaceChild(nc, pc);
+      else jxUpsert(pc, nc)
     }
   }
-  let s2bdy=s=>(doc=document.implementation.createHTMLDocument(),doc.body.innerHTML=s,doc.body)
-  let s2ela=s=>[...s2bdy(s).childNodes]
-  let s2el=(s)=>s2bdy(s).childNodes[0]
-  let jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src','innerHTML'].filter(a=>el[a]).map(a=>({[a]:el[a]})))
-  return {jxCloneJs,jxEval,jxTryEval,jxBuild,jxUpsert, tryx,s2o,o2s,s2bdy,s2el,s2ela}
+  function jxRender(tgt,src,data){
+    (typeof(src)=='string') && (src= (src[0]=='#') ? tbx.querySelector(src) : s2bdy(src));
+    (typeof tgt=='string') && (tgt= (tgt[0]=='#') ? tbx.querySelector(tgt) : s2bdy(tgt));
+    jxUpsert(tgt,jxBuild(src,data))
+    return tgt
+  }
+  return {jxRender,jxCloneJs,jxEval,jxTryEval,jxBuild,jxUpsert,tryx,s2o,o2s,s2bdy,s2el,s2ela}
 }
