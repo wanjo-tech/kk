@@ -112,12 +112,6 @@ const server = http.createServer(async(req, res) => {
         console.error('ERR',url,statusCode,headers,'=>',error);
         const msg = (''+error).split('\n')[0]; // Get the first line only
         const code = (error||{}).code
-        res.writeHead(200, {
-          'Content-Type':'application/json;charset=utf-8',
-          "Access-Control-Allow-Origin":"*",
-          "Access-Control-Allow-Methods":"POST, OPTIONS, GET, DELETE",
-          "Access-Control-Allow-Headers":"*",
-        });
         var data = o2s({msg,code})
     }
     if (hasGzip) {
