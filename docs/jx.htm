@@ -35,7 +35,7 @@ thisDate={{thisDate}}
 <div j-html="'<h3>test j-html</h3>'">should-not-see-this</div>
 </template>
 <textarea id='tplStage' style="border:1px solid;min-width:640px;min-height:150px" spellcheck="false">
-<br/>test @change <input @change='(console.log("on change=>",this.value,event),true)' value='abcd'/>
+<br/>test @change <input @change='(console.log("on change=>",this.data,this.handler,this.value,event),true)' value='abcd'/>
 <h3>thisDate={{thisDate}}</h3>
 <div j-for="val,key,idx in wtf"><li>{{ idx+","+key+":"+val }}</li></div>
 <font>OK {{ new Date() }}</font>
