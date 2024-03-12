@@ -9,10 +9,11 @@ o2s=(o,h)=>tryx(()=>JSON.stringify(o),h),
 s2bdy=s=>(doc=tbx.implementation.createHTMLDocument(),doc.body.innerHTML=s,doc.body),
 s2ela=s=>[...s2bdy(s).childNodes],
 s2el=(s)=>s2bdy(s).childNodes[0],
+jxExtend=(o)=>((typeof o=='object')?o2s(o):(o||'')),
 jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src','innerHTML'].filter(a=>el[a]).map(a=>({[a]:el[a]})));
 function jxBuild(node, data={}) {
     if (node.nodeType === 3)//TEXT_NODE
-      return tbx.createTextNode(node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxTryEval(expr,data,ex=>'['+ex+']')));
+      return tbx.createTextNode(node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxExtend(jxTryEval(expr,data,ex=>'['+ex+']'))));
     if (node.tagName=='TEMPLATE'||node.tagName=='SCRIPT') node = s2bdy(node.innerHTML);
     let returnNode = node.cloneNode?.(),
 hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),''),
@@ -52,10 +53,10 @@ theAttribute;
       buildWithChildren(resultNode,data,returnNode)
     } else if (theAttribute=node.getAttribute?.('j-text')) {
       renAttribute(returnNode,'j-text',theAttribute);
-      returnNode.textContent = jxTryEval(theAttribute,data,hErr)
+      returnNode.textContent = jxExtend(jxTryEval(theAttribute,data,hErr))
     } else if (theAttribute=node.getAttribute?.('j-html')) {
       renAttribute(returnNode,'j-html',theAttribute);
-      returnNode.innerHTML = jxTryEval(theAttribute,data,hErr)
+      returnNode.innerHTML = jxExtend(jxTryEval(theAttribute,data,hErr))
     } else buildWithChildren(node,data,returnNode)
     return returnNode
 }
