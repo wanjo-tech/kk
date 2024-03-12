@@ -1,4 +1,4 @@
-//https://kk.datakk.com/jx.htm
+//kk.datakk.com/jx.htm
 let jx = (tbx=window.document)=>{
 const tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}},
 jev=function(){with(this)return eval(arguments[0])},
@@ -6,27 +6,25 @@ jxEval=(js,ctx)=>jev.bind(ctx)(js),
 jxTryEval=(txt,ctx,h)=>tryx(()=>jxEval(txt,ctx),h),
 s2o=(s,h)=>jxTryEval(`(${s})`,h),
 o2s=(o,h)=>tryx(()=>JSON.stringify(o),h),
-s2bdy=s=>(doc=document.implementation.createHTMLDocument(),doc.body.innerHTML=s,doc.body),
+s2bdy=s=>(doc=tbx.implementation.createHTMLDocument(),doc.body.innerHTML=s,doc.body),
 s2ela=s=>[...s2bdy(s).childNodes],
 s2el=(s)=>s2bdy(s).childNodes[0],
 jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src','innerHTML'].filter(a=>el[a]).map(a=>({[a]:el[a]})));
 function jxBuild(node, data={}) {
-    if (node.nodeType === 3)//Node.TEXT_NODE
+    if (node.nodeType === 3)//TEXT_NODE
       return tbx.createTextNode(node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxTryEval(expr,data,ex=>'['+ex+']')));
     if (node.tagName=='TEMPLATE'||node.tagName=='SCRIPT') node = s2bdy(node.innerHTML);
     let returnNode = node.cloneNode?.(),
 hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),''),
 hErr = ex=>(returnNode.setAttribute?.('j-err',''+ex),'['+ex+']'),
 buildWithChildren=(n,dt,X)=>(n && n.childNodes.forEach(child=>X.appendChild(jxBuild(child,dt)))),
-renAttribute=(d,n,v='')=>(d.removeAttribute(n),d.setAttribute(n+'-',v)),
+renAttribute=(d,n,v='',n2)=>(d.removeAttribute(n),d.setAttribute(n2===undefined?(n+'-'):n2,v)),
 theAttribute;
-    if (theAttribute=node.getAttribute?.(':value'))
-      returnNode.setAttribute?.('value',jxTryEval(theAttribute,data,hWarn));
     node.attributes && [...node.attributes].forEach(attr=>{
+      attr.name.startsWith(':') && renAttribute(returnNode,attr.name,jxTryEval(attr.value,data,hWarn),attr.name.slice(1));
       attr.name.startsWith('@') && returnNode.addEventListener(attr.name.slice(1),function(event){
           var obj = jxTryEval(attr.value,this,true);
-          if (typeof obj=='function') return tryx(()=>obj(event),true)
-          return obj
+          return (typeof obj=='function') ? tryx(()=>obj(event),true) : obj
       });
     });
     if (theAttribute = node.getAttribute?.('j-for')) {
@@ -39,10 +37,10 @@ theAttribute;
         returnNode = tbx.createDocumentFragment() //tbx.createElement('div') //
         Object.entries(items).forEach(([key, val], idx)=>{
           const loopData={...data,[valVar]:val,...(keyVar&&{[keyVar]:key}),...(idxVar&&{[idxVar]:idx})}
-          var newNode = node.cloneNode();
-          renAttribute(newNode,'j-for',theAttribute);
-          buildWithChildren(node,loopData,newNode)
-          returnNode.appendChild(jxBuild(newNode,loopData))
+          var nn = node.cloneNode();
+          renAttribute(nn,'j-for',theAttribute);
+          buildWithChildren(node,loopData,nn)
+          returnNode.appendChild(jxBuild(nn,loopData))
         })
       }
     } else if (node.hasAttribute?.('j-else')) { //SKIP for handled in j-if branch
@@ -63,39 +61,34 @@ theAttribute;
 }
 function maybeDifferent(node1, node2) {
     if (node1.nodeType !== node2.nodeType) return true;
-    if (node1.nodeType === 1 && node1.tagName !== node2.tagName) return true;//Node.ELEMENT_NODE
-    if (node1.nodeType == 3 && node1.textContent != node2.textContent) return true;//Node.TEXT_NODE
+    if (node1.nodeType === 1 && node1.tagName !== node2.tagName) return true;//ELEMENT_NODE
+    if (node1.nodeType == 3 && node1.textContent != node2.textContent) return true;//TEXT_NODE
     if (node1.childNodes.length != node2.childNodes.length) return true;
     if (!node1.attributes || !node2.attributes) return false;
     if (node1.attributes.length !== node2.attributes.length) return true;
-    for (let i = 0; i < node1.attributes.length; i++) {
-      const attrName = node1.attributes[i].name;
-      if (node1.getAttribute(attrName) !== node2.getAttribute(attrName)) return true;
-    }
-    return false;
+    return [...node1.attributes].some(({name}=attr)=>(node1.getAttribute(name)!==node2.getAttribute(name)))
 }
-//WARNING: the newNode will be touched (so please make it cloned by jxBuild())
-function jxUpsert(oldNode, newNode) {
-  const oldChildren = [...oldNode.childNodes||[]]
-  const newChildren = [...newNode.childNodes||[]]
-  const maxLength = Math.max(oldChildren.length, newChildren.length)
+//WARNING: the nn will be touched (so please make it cloned by jxBuild())
+function jxUpsert(pn, nn) {
+  const pca = [...pn.childNodes||[]]
+  const nca = [...nn.childNodes||[]]
+  const maxLength = Math.max(pca.length, nca.length)
   for (let i = 0; i < maxLength; i++) {
-    const oldChild = oldChildren[i]
-    let newChild = newChildren[i]
-    if (newChild && newChild.tagName=='SCRIPT' && (!newChild.type||newChild.type=='text/javascript')){
-      newChild = jxCloneJs(newChild) // trick for js el
-      if (oldChild) oldNode.replaceChild(newChild,oldChild)
-      else oldNode.appendChild(newChild)
-    }else if (!oldChild && newChild) {
-      oldNode.appendChild(newChild)
-    } else if (oldChild && !newChild) {
-      oldNode.removeChild(oldChild)
-    } else if (maybeDifferent(oldChild,newChild)) {
-      oldNode.replaceChild(newChild, oldChild)
-    } else {
-      jxUpsert(oldChild, newChild)
-    }
+    let pc=pca[i],nc=nca[i]
+    if (nc && nc.tagName=='SCRIPT' && (!nc.type||nc.type=='text/javascript')){
+      nc = jxCloneJs(nc);
+      if (pc) pn.replaceChild(nc,pc);else pn.appendChild(nc)
+    }else if (!pc && nc) pn.appendChild(nc);
+    else if (pc && !nc) pn.removeChild(pc);
+    else if (maybeDifferent(pc,nc)) pn.replaceChild(nc, pc);
+    else jxUpsert(pc, nc)
   }
 }
-return {jxCloneJs,jxEval,jxTryEval,jxBuild,jxUpsert, tryx,s2o,o2s,s2bdy,s2el,s2ela}
+function jxRender(tgt,src,data){
+  (typeof(src)=='string') && (src= (src[0]=='#') ? tbx.querySelector(src) : s2bdy(src));
+  (typeof tgt=='string') && (tgt= (tgt[0]=='#') ? tbx.querySelector(tgt) : s2bdy(tgt));
+  jxUpsert(tgt,jxBuild(src,data))
+  return tgt
+}
+return {jxRender,jxCloneJs,jxEval,jxTryEval,jxBuild,jxUpsert,tryx,s2o,o2s,s2bdy,s2el,s2ela}
 }
