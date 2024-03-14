@@ -23,17 +23,6 @@ var cdp_call = (ws,method,params)=>new Promise((resolve,reject)=>{
     ws.send(JSON.stringify({id, method, params}));
 })
 
-console.log('bizcdp.mjs: this',this)
-console.log('bizcdp.mjs: WebSocket',typeof WebSocket)
-
-//if (typeof WebSocket==='undefined') {
-//  if (typeof module!='undefined'){
-//    var WebSocket = require('ws')
-//  }else{
-//    var WebSocket = import('ws')
-//  }
-//  console.log('WebSocket',typeof WebSocket)
-//}
 const sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
 async function module_exports(opts){
   var {WebSocketClass,pattern, init, url, expression, port, host, debug=false, reload=0} = opts || {}
@@ -136,10 +125,5 @@ async function module_exports(opts){
     console.log('TODO cdp rst',rst)
   }
 }
-console.log('typeof global',typeof(global))
-//console.log('typeof global.export',typeof(global.export))
-//console.log('typeof module',typeof module)
-//console.log('typeof export',typeof(export))
-//module.exports = module_exports
 
-export default module_exports;//NOTE: program in nodejs change to import() for this instead of the old require()
+export default module_exports
