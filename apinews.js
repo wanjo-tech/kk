@@ -30,7 +30,7 @@ var history_s = async(id,interval='PT15M',pointscount=160,reload=1234)=>{
     if (!id) throw 'need id'
     var u = `${api_entry}/api/financialdata/${id}/historical/chart/?interval=${interval}&pointscount=${pointscount}`
     var bizcdp = require('./bizcdp')
-    return await bizcdp({pattern:u,expression:`document.body.innerText`,reload:1234,debug:false})
+    return await bizcdp({WebSocketClass:require('ws'),pattern:u,expression:`document.body.innerText`,reload:1234,debug:false})
 }
 var history_o = async(id,interval,pointscount,reload=0)=>{
   var rt = s2o(await history_s(id,interval,pointscount,reload))
