@@ -1,4 +1,7 @@
 <body>
+<link rel="stylesheet" href="https://static.datakk.com/snoopy.css"/>
+<link rel="stylesheet" href="../docs/snoopy.css"/>
+<link rel="stylesheet" href="snoopy.css"/>
 <h1>JX=TINY WEB-JS TEMPLATE ENGINE by datakk</h1>
 <h3>DOC&TESTER=<a href="https://kk.datakk.com/jx.htm" target=_blank>https://kk.datakk.com/jx.htm</a><h3>
 <h3>CODE=<a href="https://github.com/wanjo-tech/kk/blob/main/docs/jx.js" target=_blank>https://github.com/wanjo-tech/kk/blob/main/docs/jx.js</a><h3>
@@ -7,8 +10,8 @@
 <h3>DEBUG=[...document.querySelectorAll('[j-err],[j-warn]')].map(console.log)</h3>
 <script src='jx.js'></script>
 <hr/>
-<button onclick='Build()'>Build</button>
-<button onclick='Render()'>Render</button> tpl=&nbsp;
+<button class="mycss-button" onclick='Build()'>Build</button>
+<button class="mycss-button" onclick='Render()'>Render</button> tpl=&nbsp;
 <a href='javascript:testIf()'>j-if</a>&nbsp;
 <a href='javascript:testFor()'>j-for</a>&nbsp;
 <a href='javascript:testTestVar()'>var</a>
@@ -34,7 +37,7 @@ thisDate={{thisDate}}
 <div j-else>j-else f1a={{typeof fla}}</div>
 <div j-html="'<h3>test j-html</h3>'">should-not-see-this</div>
 </template>
-<textarea id='tplStage' style="border:1px solid;min-width:640px;min-height:150px" spellcheck="false">
+<textarea class="mycss-textarea" id='tplStage' style="min-height:100px" oldstyle="border:1px solid;min-width:640px;min-height:150px" spellcheck="false">
 <br/>test @change <input @change='(console.log("on change=>",this.data,this.handler,this.value,event),true)' value='abcd'/>
 <h3>thisDate={{thisDate}}</h3>
 <div j-for="val,key,idx in wtf"><li>{{ idx+","+key+":"+val }}</li></div>
@@ -63,13 +66,13 @@ test j-text:
 <div j-for="val in itemsb" j-text="val"></div>
 </textarea>
 <br/>data=<br/>
-<textarea id='stageData' style='border:1px solid;min-width:640px;min-height:50px' spellcheck="false">
+<textarea class="mycss-textarea" id='stageData' style='min-height:50px' oldstyle='border:1px solid;min-width:640px;min-height:50px' spellcheck="false">
 {thisDate:new Date(), items: ["Apple", "Banana", "Cherry"], itemsb:{Apple:222,Banana:333,Cherry:444}, f2b:true}
 </textarea>
 <br/>debug=<br/>
-<textarea id='stageDebug' style='border:1px solid;min-width:640px;min-height:30px' spellcheck="false"></textarea>
+<textarea class="mycss-textarea" id='stageDebug' style='min-height:30px' oldstyle='border:1px solid;min-width:640px;min-height:30px' spellcheck="false"></textarea>
 <br/>Build=<br/>
-<textarea id='stageCode' style='border:1px solid;min-width:640px;min-height:70px'></textarea>
+<textarea class="mycss-textarea" id='stageCode' style='min-height:70px' oldstyle='border:1px solid;min-width:640px;min-height:70px'></textarea>
 <br/>render=<br/>
 <div style='border:1px solid;width:99%;' id='divStage'></div>
 
