@@ -7,7 +7,8 @@
 <h3>DEBUG=[...document.querySelectorAll('[j-err],[j-warn]')].map(console.log)</h3>
 <script src='jx.js'></script>
 <hr/>
-<button onclick='Build()'>Build</button> <button onclick='Render()'>Render</button> tpl=&nbsp;
+<button onclick='Build()'>Build</button>
+<button onclick='Render()'>Render</button> tpl=&nbsp;
 <a href='javascript:testIf()'>j-if</a>&nbsp;
 <a href='javascript:testFor()'>j-for</a>&nbsp;
 <a href='javascript:testTestVar()'>var</a>
@@ -73,29 +74,29 @@ test j-text:
 <div style='border:1px solid;width:99%;' id='divStage'></div>
 
 <script>
-var {s2bdy,jxTryEval,jxRender,jxBuild,jxUpsert,s2el,s2o,o2s}=jx()
+var {s2bdy,s2frg,jxTryEval,jxRender,_jxBuild,_jxUpsert,s2el,s2o,o2s}=jx()
 var now = () => new Date().getTime()/1000;
 var gData = {}
 function Build(){
   var data_s = stageData.value
-  //console.log('data_s',data_s)
+  console.log('data_s',data_s)
   var data = jxTryEval(`(${data_s})`,{},console.log)
   Object.assign(gData,data)
-  //console.log('data',data)
-  //var template = tpl.innerHTML
-  //var template = tplStage.textContent
+  console.log('data',data)
   template = tplStage.value
-  //console.log('template',template)
+  console.log('template',template)
 var t0=now()
-  var elTemplate = s2bdy(template);
+  var elTemplate = s2frg(template);
+  console.log('elTemplate',template)
 var t1=now()
-  var built = jxBuild(elTemplate, gData);
+  var built = _jxBuild(elTemplate, gData);
+  console.log('built',built)
 var t2=now()
   var s = built.innerHTML
 var t3=now()
   stageCode.value=s
 var t4=now()
-  stageDebug.value=JSON.stringify(['compile',t1-t0,'jxBuild',t2-t1,'2s',t3-t2,'show',t4-t3])
+  stageDebug.value=JSON.stringify(['compile',t1-t0,'_jxBuild',t2-t1,'2s',t3-t2,'show',t4-t3])
   return built 
 }
 function Render(){
@@ -103,7 +104,7 @@ var t0=now()
   //jxUpsert(divStage,Build())
   var data = jxTryEval(`(${stageData.value})`)
   Object.assign(gData,data)
-  //jxUpsert(divStage,jxBuild(s2bdy(tplStage.value),gData))
+  //jxUpsert(divStage,_jxBuild(s2bdy(tplStage.value),gData))
   jxRender(divStage,tplStage.value,gData)
 var t1=now()
   //stageDebug.textContent+=`=>Render ${t1-t0}`

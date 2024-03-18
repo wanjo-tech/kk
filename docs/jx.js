@@ -15,7 +15,9 @@ jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src
   function _jxBuild(node, data={}){
     if (node.nodeType === 3)//TEXT_NODE
       return tbx.createTextNode(node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxExtend(jxTryEval(expr,data,ex=>'['+ex+']'))));
-    if (node.tagName=='TEMPLATE'||node.tagName=='SCRIPT') node = s2frg(node.innerHTML);
+    if (node.tagName=='TEMPLATE') {//SPECIAL FOR <TEMPLATE/>
+      node = s2frg(node.innerHTML);
+    }
     let returnNode = node.cloneNode(),
         hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),''),
         hErr = ex=>(returnNode.setAttribute?.('j-err',''+ex),'['+ex+']'),
