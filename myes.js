@@ -121,8 +121,22 @@ function jPath(obj,path,val){
   }
 }
 var jPathAsync = async(obj,path,val)=>jPath((obj instanceof Promise)?(await obj):obj,path,val);
+
+let system = async(command, encoding='utf-8', chcp='65001')=>{
+  const { exec } = require('child_process');
+  const isWindows = process.platform === 'win32';
+  const fullCommand = isWindows ? `chcp 65001 >nul && ${command}` : command;
+  const shell = isWindows ? 'cmd.exe' : '/bin/sh';
+  return new Promise((resolve, reject) => exec(
+    fullCommand, { encoding, shell }, (error, stdout, stderr) => {
+      if (error) reject(`exec error: ${error}`);
+      else if (stderr) reject(`stderr: ${stderr}`);
+      else resolve(stdout.trim());
+    })
+  );
+}
 var module_exports = { argv2o, tryx, s2o, o2s, myResponse,tryp, myfetch, http, https, urlModule, sleep_async,
-  fs, nothing, date, now, tryRequire, zlib, gzip2s, jPath, jPathAsync,
+  fs, nothing, date, now, tryRequire, zlib, gzip2s, jPath, jPathAsync, system,
 
   //@ref https://cnodejs.org/topic/504061d7fef591855112bab5
   md5: (s) => require('crypto').createHash('md5').update(s).digest('hex'),

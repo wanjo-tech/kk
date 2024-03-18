@@ -1,4 +1,4 @@
-//TINY HTTP API SERVER FOR INNER USE
+//TINY NODEJS HTTP API SERVER FOR INNER USE
 
 //usage e.g.
 //node server /app=default /port=8000 /fwd=1
@@ -6,6 +6,7 @@
 
 const { argv2o, tryx, s2o, o2s, tryp, myfetch, http, urlModule, gzip2s, fs} = require('./myes')
 const argo = argv2o();
+const isValidUrl = (s)=>s && (s.startsWith('https:')||s.startsWith('http:'));
 const server = http.createServer(async(req, res) => {
     var headers = {
       'Content-Type':'application/json;charset=utf-8',
@@ -13,21 +14,55 @@ const server = http.createServer(async(req, res) => {
       "Access-Control-Allow-Methods":"POST, OPTIONS, GET, DELETE",
       "Access-Control-Allow-Headers":"*",
     }, statusCode=200,url,body; 
-
-    var fastReturn = ({statusCode=200,headers,data}={})=>{
-      res.writeHead(statusCode, headers);
-      res.end(data);
-    }
+    let fastReturn = ({statusCode=200,headers,data}={})=>{res.writeHead(statusCode, headers);res.end(data)}
 
     try {
-      var isValidUrl = (s)=>s && (s.startsWith('https:')||s.startsWith('http:'));
       const reqHeaders = req.headers;
       const acceptEncoding = reqHeaders['accept-encoding'];
       var hasGzip = acceptEncoding && acceptEncoding.includes('gzip');
-      const reqHOST = reqHeaders['host'] || 'localhost';
       if (argo.token && argo.token!=reqHeaders['dkktoken']) throw `TOKEN`
+      let reqHOST = reqHeaders['host'] || 'localhost';
+      let reqHOST_a = reqHOST.split(':');
+      let reqPOST='';
+      if (reqHOST_a.length>1) {
+        reqHOST = reqHOST_a[0];
+        reqPORT = reqHOST_a[1];
+      }
       const dkkHost = reqHeaders['dkkhost'];
       url = dkkHost ? `https://${dkkHost}${req.url}` : req.url.substring(1);
+      if ( (argo.static || argo.static_local) && (req.method == 'GET')) {
+        var static = argo.static || '';
+        var static_local = argo.static_local || argo.static;
+        if (url == 'favicon.ico') { url = static + reqHOST + '-' + url; }
+        if (url.startsWith(static)){
+          var url_rest = url.substring(static.length)
+          var pathModule = require('path')
+          const staticBasePath = pathModule.join(__dirname, static_local);
+          //const staticFilePath = pathModule.join(staticBasePath, url_rest);
+          var url_rest_o = urlModule.parse(url_rest);
+          let pathname = url_rest_o.pathname;
+          const staticFilePath = pathModule.join(staticBasePath, url_rest_o.pathname||'');
+          if (fs.existsSync(staticFilePath)){
+            const stats = fs.statSync(staticFilePath);
+            if (stats.isFile()) {
+              const ext = pathModule.extname(staticFilePath).toLowerCase();
+              const mimeTypes = {
+                  '.html': 'text/html',
+                  '.htm': 'text/html',
+                  '.js': 'application/javascript',
+                  '.css': 'text/css',
+                  '.png': 'image/png',
+                  '.jpg': 'image/jpeg',
+                  '.ico': 'image/png',//TMP
+              };
+              const contentType = mimeTypes[ext] || 'application/octet-stream';
+              headers['Content-Type'] = contentType;
+              var data = fs.readFileSync(staticFilePath)
+              return fastReturn({statusCode,headers,data})
+            } //else console.log('skip non file',url)
+          }//else console.log('fallback to app',url);//let app handle
+        }//else console.log('fallback to app for',url);//for static!=''
+      }
       if (req.method === 'POST') {
         body = await new Promise((resolve, reject) => {
           let data = '';
@@ -36,38 +71,7 @@ const server = http.createServer(async(req, res) => {
           req.on('error', (error) => reject(error));
         });
       }
-      if (argo.static || argo.static_local) {
-        var static = argo.static || 'static/'
-        var static_local = argo.static_local || argo.static;
-        if (url == 'favicon.ico') url = static + url;
-        if (url.startsWith(static)){
-          var url_rest = url.substring(static.length)
-          var path = require('path')
-          const staticBasePath = path.join(__dirname, static_local);
-          const staticFilePath = path.join(staticBasePath, url_rest);
-          //console.log({staticBasePath,staticFilePath,url_rest})
-          if (fs.existsSync(staticFilePath)){
-            const ext = path.extname(staticFilePath).toLowerCase();
-            const mimeTypes = {
-                '.html': 'text/html',
-                '.htm': 'text/html',
-                '.js': 'application/javascript',
-                '.css': 'text/css',
-                '.png': 'image/png',
-                '.jpg': 'image/jpeg',
-                '.ico': 'image/png',//TMP
-            };
-            const contentType = mimeTypes[ext] || 'application/octet-stream';
-            //console.log('contentType',{url,ext,contentType})
-            headers['Content-Type'] = contentType;
-            var data = fs.readFileSync(staticFilePath)
-          } else {
-            var data = '404 '+url
-          }
-          return fastReturn({statusCode,headers,data})
-        }
-      }
-      //TODO fix the bugs!!:
+      //TODO in future, fix the bugs of the loop..
       var referer=reqHeaders.referer;
       if (argo.fwd && referer && !isValidUrl(url)){
         var referer_o = urlModule.parse(referer)
