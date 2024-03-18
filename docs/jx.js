@@ -7,6 +7,7 @@ jxTryEval=(txt,ctx,h)=>tryx(()=>jxEval(txt,ctx),h),
 s2o=(s,h)=>jxTryEval(`(${s})`,h),
 o2s=(o,h)=>tryx(()=>JSON.stringify(o),h),
 s2frg=(s)=>(s?tbx.createRange().createContextualFragment(s):tbx.createDocumentFragment()),
+frg2s=frg=>frg?[...frg.childNodes].reduce((h,n)=>(h+(n.outerHTML||n.textContent)),''):null,
 s2bdy=s=>(doc=tbx.implementation.createHTMLDocument(),doc.body.innerHTML=s,doc.body),
 s2ela=s=>[...s2frg(s).childNodes],
 s2el=(s)=>s2frg(s).childNodes[0],
@@ -91,5 +92,5 @@ jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src
     _jxUpsert(tgt,_jxBuild(src,data))
     return tgt
   }
-  return {jxRender,jxCloneJs,jxEval,jxTryEval,_jxBuild,_jxUpsert,tryx,s2o,o2s,s2bdy,s2el,s2ela,s2frg}
+  return {jxRender,jxCloneJs,jxEval,jxTryEval,_jxBuild,_jxUpsert,tryx,s2o,o2s,s2bdy,s2el,s2ela,s2frg,frg2s}
 }

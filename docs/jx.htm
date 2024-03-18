@@ -74,7 +74,7 @@ test j-text:
 <div style='border:1px solid;width:99%;' id='divStage'></div>
 
 <script>
-var {s2bdy,s2frg,jxTryEval,jxRender,_jxBuild,_jxUpsert,s2el,s2o,o2s}=jx()
+var {s2bdy,s2frg,frg2s,jxTryEval,jxRender,_jxBuild,_jxUpsert,s2el,s2o,o2s}=jx()
 var now = () => new Date().getTime()/1000;
 var gData = {}
 function Build(){
@@ -92,7 +92,8 @@ var t1=now()
   var built = _jxBuild(elTemplate, gData);
   console.log('built',built)
 var t2=now()
-  var s = built.innerHTML
+  //var s = built.innerHTML
+  var s = frg2s(built)
 var t3=now()
   stageCode.value=s
 var t4=now()
