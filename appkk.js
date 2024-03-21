@@ -1,4 +1,4 @@
-var {o2s,s2o,tryx,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync} = require('./myes')
+var {o2s,s2o,tryx,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync,jevalx} = require('./myes')
 var init_time = now()
 /*
 TEST CASES after /?
@@ -50,8 +50,7 @@ module.exports = async (opts)=>{
     tool:tryRequire('./apitool'),
     news:tryRequire('./apinews'),
   }
-  var myevalp = await require('./myevalp') //for internal.
-  var rst = await myevalp(body,ctx)
+  var rst = await jevalx(body,ctx)
   if (typeof rst == 'function') rst = await rst()
   var data = rst
   if (typeof rst != 'string') data = o2s(rst)
