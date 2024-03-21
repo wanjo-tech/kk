@@ -1,15 +1,14 @@
-var {o2s,s2o,tryx,tryp,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync,urlModule,safe,qstr,jevalx} = require('./myes')
+var {o2s,s2o,tryx,tryp,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync,urlModule,safe,qstr,jevalx,
+get_timestamp,get_time_iso,get_time_YmdHMS,
+} = require('./myes')
 var init_time = now()
-var get_timestamp = (d)=>(d||new Date()).getTime();
-var get_time_iso = (d)=>((d||new Date())).toISOString();
-var get_time_YmdHMS = (d)=>get_time_iso(d).slice(0,19).replace('T',' ');
 
 /*
 TEST CASES after /?
 new Date().toLocaleDateString()
 */
 //?(async()=>a2csv(await%20bk.showTable`TBL_ITEM`))
-//?a2csv(bk.showTable`TBL_ITEM`)
+//?a2csv(_.bk.showTable`TBL_ITEM`)
 async function a2csv(a) {
   var a = await a;
   var s='';
@@ -18,7 +17,7 @@ async function a2csv(a) {
   }
   return s
 }
-//?a2tbl(bk.showTable`TBL_ITEM`)
+//?a2tbl(_.bk.showTable`TBL_ITEM`)
 async function a2tbl(a) {
   if (typeof a=='function') a = a()
   a = await a;
@@ -84,7 +83,7 @@ module.exports = async(Application)=>{
           async get(target2, prop2, receiver2) {
             if (!objcache[prop]) {
               var m = tryRequire('./api'+safe(prop));
-              if (typeof(m)=='function') m= await m();//TODO the args...
+              if (typeof(m)=='function') m= await m(Application);//DESIGN as apiXXX(Application)
               obj = objcache[prop] = m;
             }
             //var rt2 = obj[prop2];//...
@@ -103,7 +102,7 @@ module.exports = async(Application)=>{
 
   var ctx = {
     //quick tools:
-    md5, md5_ascii,o2s,s2o,a2csv,a2tbl,init_time,now,safe,qstr,
+    md5,md5_ascii,o2s,s2o,a2csv,a2tbl,init_time,now,safe,qstr,
     $:jPathAsync,//e.g. $(news.history_o(945629),'data'),
     reload:(m='aiwin')=>(typeof tryRequire('./'+m,true)),
     //myfilename:()=>require('path').basename(__filename),//
@@ -112,7 +111,6 @@ module.exports = async(Application)=>{
     //app_id,
 
     _: new Proxy({},handler),
-
   }
   var rst = await jevalx(body,ctx);
   if (typeof rst == 'function') rst = await rst()
