@@ -1,11 +1,18 @@
-const tryx = (f, h = null) => { try { return f() } catch (ex) { return h ? h === true ? ex : h(ex) : null } };
-const s2o = (s) => tryx(() => JSON.parse(s));
-const o2s = (o) => JSON.stringify(o);
-const tryp = async(f, h = null) => { try { return await f() } catch (ex) { return h ? h === true ? ex : h(ex) : null } };
+var tryx=(f,h=null)=>{try{return(f())}catch(ex){return(h?h===true?ex:h(ex):null)}},
+s2o=(s)=>tryx(()=>JSON.parse(s)),
+o2s=(o)=>JSON.stringify(o),
+tryp=async(f,h=null)=>{try{return(await f())}catch(ex){return(h?h===true?ex:h(ex):null)}};
 
-const argv2o=a=>(a||process.argv||[]).reduce((r,e)=>((m=e.match(/^(\/|--?)([\w-]*)="?(.*)"?$/))&&(r[m[2]]=m[3]),r),{});
+var argv2o=a=>(a||process.argv||[]).reduce((r,e)=>((m=e.match(/^(\/|--?)([\w-]*)="?(.*)"?$/))&&(r[m[2]]=m[3]),r),{});
 
-const sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
+var sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
+
+var jev=function(){with(this)return eval(arguments[0])};
+var jeval=(js,ctx)=>jev.bind(ctx)(js);
+//for backend:
+var jevalx = (js,ctx,timeout=60000,vm=require('node:vm'))=>vm.createScript(
+  `[(function(){return eval(arguments[0])})][0](${JSON.stringify(js)})`//my magic for 'this'
+).runInContext(vm.createContext(ctx),{breakOnSigint:true,timeout});
 
 function myResponse(rt, status = 200, webSocket = null, ext_headers={}) {
   let response = new Response(rt && typeof rt != "string" ? o2s(rt) : rt, { status, webSocket });
@@ -18,15 +25,15 @@ function myResponse(rt, status = 200, webSocket = null, ext_headers={}) {
   }
   return response;
 }
-const tryRequire = (mmm,fff=false)=>{
+var tryRequire = (mmm,fff=false)=>{
   if(fff){ delete require.cache[require.resolve(mmm)] }
   return tryx(()=>require(mmm))
 }
-const http = tryRequire('http')
-const https = tryRequire('https')
-const zlib = tryRequire('zlib')
-const urlModule = tryRequire('url')
-const fs = tryRequire('fs')
+var http = tryRequire('http')
+var https = tryRequire('https')
+var zlib = tryRequire('zlib')
+var urlModule = tryRequire('url')
+var fs = tryRequire('fs')
 
 var nothing = ()=>{};
 var date = () => new Date();
@@ -45,7 +52,7 @@ function decompress(response, encoding) {
 }
 //TODO myget and mypost later
 function myfetch(url, options={}) {
-    const parsedUrl = urlModule.parse(url);
+    var parsedUrl = urlModule.parse(url);
 
     //options.joinDuplicateHeaders = true //TMP
     options.headers = options.headers || {};
@@ -58,12 +65,12 @@ function myfetch(url, options={}) {
         throw 'WRONGURL'
     }
     var referer = options.headers['referer'] = url;// `https://${parsedUrl.host||''}/`;
-    const webModule = url.startsWith('https://') ? https : http;
+    var webModule = url.startsWith('https://') ? https : http;
 
     return new Promise((resolve, reject) => {
-        const req = webModule.request(url, options, (response) => {
-            const encoding = response.headers['content-encoding'];
-            const stream = decompress(response, encoding);
+        var req = webModule.request(url, options, (response) => {
+            var encoding = response.headers['content-encoding'];
+            var stream = decompress(response, encoding);
             let data = [];
             stream.on('data', (chunk) => data.push(chunk));
             stream.on('end', () => {
@@ -120,13 +127,14 @@ function jPath(obj,path,val){
     return obj //for chain
   }
 }
+//var jPathAsync = async(obj,path,val)=>jPath(await obj,path,val);
 var jPathAsync = async(obj,path,val)=>jPath((obj instanceof Promise)?(await obj):obj,path,val);
 
 let system = async(command, encoding='utf-8', chcp='65001')=>{
-  const { exec } = require('child_process');
-  const isWindows = process.platform === 'win32';
-  const fullCommand = isWindows ? `chcp 65001 >nul && ${command}` : command;
-  const shell = isWindows ? 'cmd.exe' : '/bin/sh';
+  var { exec } = require('child_process');
+  var isWindows = process.platform === 'win32';
+  var fullCommand = isWindows ? `chcp 65001 >nul && ${command}` : command;
+  var shell = isWindows ? 'cmd.exe' : '/bin/sh';
   return new Promise((resolve, reject) => exec(
     fullCommand, { encoding, shell }, (error, stdout, stderr) => {
       if (error) reject(`exec error: ${error}`);
@@ -135,8 +143,11 @@ let system = async(command, encoding='utf-8', chcp='65001')=>{
     })
   );
 }
-var module_exports = { argv2o, tryx, s2o, o2s, myResponse,tryp, myfetch, http, https, urlModule, sleep_async,
-  fs, nothing, date, now, tryRequire, zlib, gzip2s, jPath, jPathAsync, system,
+let safe = str=>(""+str).replace(/[^0-9a-z_\.\*]+/gi, '');
+let qstr = str=>`'${safe(str)}'`;
+
+var myes = { argv2o, tryx, s2o, o2s, myResponse,tryp, myfetch, http, https, urlModule, sleep_async,
+  fs, nothing, date, now, tryRequire, zlib, gzip2s, jPath, jPathAsync, system, jev, jeval,jevalx, safe, qstr,
 
   //@ref https://cnodejs.org/topic/504061d7fef591855112bab5
   md5: (s) => require('crypto').createHash('md5').update(s).digest('hex'),
@@ -150,14 +161,14 @@ var module_exports = { argv2o, tryx, s2o, o2s, myResponse,tryp, myfetch, http, h
 
   aesEncode:(data, key="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=")=>{
           let crypto = require('crypto');
-          const cipher = crypto.createCipher('aes192', key);
+          var cipher = crypto.createCipher('aes192', key);
           var crypted = cipher.update(data, 'utf8', 'hex');
           crypted += cipher.final('hex');
           return crypted;
   },
   aesDecode:(encrypted, key="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=")=>{
           let crypto = require('crypto');
-          const decipher = crypto.createDecipher('aes192', key);
+          var decipher = crypto.createDecipher('aes192', key);
           var decrypted = decipher.update(encrypted, 'hex', 'utf8');
           decrypted += decipher.final('utf8');
           return decrypted;
@@ -173,6 +184,9 @@ var module_exports = { argv2o, tryx, s2o, o2s, myResponse,tryp, myfetch, http, h
   },
 }
 
-module.exports = module_exports
-//for cf worker..
-//export default module_exports;
+if (typeof module!='undefined') module.exports = myes
+
+//usage example for import()
+//var myes = (await import('./myes.js')).default
+//for typescript
+//export default myes;

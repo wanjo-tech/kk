@@ -7,6 +7,15 @@
 const { argv2o, tryx, s2o, o2s, tryp, myfetch, http, urlModule, gzip2s, fs} = require('./myes')
 const argo = argv2o();
 const isValidUrl = (s)=>s && (s.startsWith('https:')||s.startsWith('http:'));
+const mimeTypes = {
+  '.html': 'text/html',
+  '.htm': 'text/html',
+  '.js': 'application/javascript',
+  '.css': 'text/css',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.ico': 'image/png',//TMP
+};
 const server = http.createServer(async(req, res) => {
     var headers = {
       'Content-Type':'application/json;charset=utf-8',
@@ -15,7 +24,6 @@ const server = http.createServer(async(req, res) => {
       "Access-Control-Allow-Headers":"*",
     }, statusCode=200,url,body; 
     let fastReturn = ({statusCode=200,headers,data}={})=>{res.writeHead(statusCode, headers);res.end(data)}
-
     try {
       const reqHeaders = req.headers;
       const acceptEncoding = reqHeaders['accept-encoding'];
@@ -23,19 +31,22 @@ const server = http.createServer(async(req, res) => {
       if (argo.token && argo.token!=reqHeaders['dkktoken']) throw `TOKEN`
       let reqHOST = reqHeaders['host'] || 'localhost';
       let reqHOST_a = reqHOST.split(':');
-      let reqPOST='';
+      let reqPORT='';
       if (reqHOST_a.length>1) {
         reqHOST = reqHOST_a[0];
         reqPORT = reqHOST_a[1];
       }
       const dkkHost = reqHeaders['dkkhost'];
       url = dkkHost ? `https://${dkkHost}${req.url}` : req.url.substring(1);
-      if ( (argo.static || argo.static_local) && (req.method == 'GET')) {
+
+      Application = {fastReturn};
+      Application.tryStaticFile = (relativePath)=>{
+        let rt;
         var static = argo.static || '';
         var static_local = argo.static_local || argo.static;
-        if (url == 'favicon.ico') { url = static + reqHOST + '-' + url; }
-        if (url.startsWith(static)){
-          var url_rest = url.substring(static.length)
+        if (relativePath == 'favicon.ico') { relativePath = static + reqHOST + '-' + relativePath; }
+        if (relativePath.startsWith(static)){
+          var url_rest = relativePath.substring(static.length)
           var pathModule = require('path')
           const staticBasePath = pathModule.join(__dirname, static_local);
           //const staticFilePath = pathModule.join(staticBasePath, url_rest);
@@ -46,22 +57,18 @@ const server = http.createServer(async(req, res) => {
             const stats = fs.statSync(staticFilePath);
             if (stats.isFile()) {
               const ext = pathModule.extname(staticFilePath).toLowerCase();
-              const mimeTypes = {
-                  '.html': 'text/html',
-                  '.htm': 'text/html',
-                  '.js': 'application/javascript',
-                  '.css': 'text/css',
-                  '.png': 'image/png',
-                  '.jpg': 'image/jpeg',
-                  '.ico': 'image/png',//TMP
-              };
               const contentType = mimeTypes[ext] || 'application/octet-stream';
               headers['Content-Type'] = contentType;
-              var data = fs.readFileSync(staticFilePath)
-              return fastReturn({statusCode,headers,data})
-            } //else console.log('skip non file',url)
-          }//else console.log('fallback to app',url);//let app handle
-        }//else console.log('fallback to app for',url);//for static!=''
+              rt = fs.readFileSync(staticFilePath)
+            } //else console.log('skip non file',relativePath)
+          }//else console.log('fallback to app',relativePath);//let app handle
+        }//else console.log('fallback to app for',relativePath);//for static!=''
+        //console.log('DEBUG tryStaticFile',relativePath,typeof rt);
+        return rt;
+      };
+      if ( (argo.static || argo.static_local) && (req.method == 'GET')) {
+        var data = Application.tryStaticFile(req.url);
+        if (data) return fastReturn({statusCode,headers,data});
       }
       if (req.method === 'POST') {
         body = await new Promise((resolve, reject) => {
@@ -86,7 +93,7 @@ const server = http.createServer(async(req, res) => {
         if (!body) body = decodeURI(urlModule.parse(url).query||'')
         var app_id = (argo.app||'default')
         app = require('./app'+app_id)
-        return await app({req,res,url,body,argo,app_id})
+        return await app({...Application,...{req,res, url,body,argo,app_id,reqHOST,reqPORT}})
       }
       //////////////////// fwd 
       if (!argo.fwd) throw 'fwd'

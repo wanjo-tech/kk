@@ -26,6 +26,7 @@ var cdp_call = (ws,method,params)=>new Promise((resolve,reject)=>{
 const sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
 async function module_exports(opts){
   var {WebSocketClass,pattern, init, url, expression, port, host, debug=false, reload=0} = opts || {}
+  // NOTE: pattern is also key.
   if (!WebSocketClass) throw 'need WebSocketClass'
   if (!port) port=9222
   if (!host) host='127.0.0.1'
@@ -44,22 +45,23 @@ async function module_exports(opts){
     if (url == cdp_o.url || cdp_o.url.match( pattern )){
       found_o = cdp_o
       flg_found = true
-      logger('MATCH',cdp_o.url,url)
+      logger('FOUND',cdp_o.url,url)
       break;
     } else {
       //logger('DEBUG NOT MATCH',cdp_o.url,url, cdp_o.url == url)
     }
   }
   if (!found_o) {
+    delete ws_o[ pattern ];
     found_o = await(await fetch(url_new,{method:'PUT'})).json()
-    //console.log('found_o from url_new',found_o,url_new)
+    logger('found_o from url_new',found_o,url_new)
     await sleep_async(666)//let have time to connect to the websocket
   }
   var webSocketDebuggerUrl = found_o.webSocketDebuggerUrl
-  logger('webSocketDebuggerUrl',webSocketDebuggerUrl)
+  //logger('webSocketDebuggerUrl',webSocketDebuggerUrl)
 
   var ws = ws_o[ pattern ]
-  logger('ws',typeof ws, (ws?ws.readyState:null))
+  //logger('typeof ws',typeof ws, 'readyState',(ws?ws.readyState:null))
   if(ws && ws.readyState==WebSocketClass.OPEN){
     logger('OK ws', pattern)
   }else{
@@ -104,11 +106,11 @@ async function module_exports(opts){
     }
     //var rst = await cdp_call(ws,'Runtime.evaluate',{expression})
     var rst = await cdp_call(ws,'Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true})
-    //if (rst && rst.result && rst.result.className=='Promise'){
-    //  console.log('Promise',rst.result)
-    //  var {className,description,objectId,subtype} = rst.result
-    //  rst = await cdp_call(ws,'Runtime.awaitPromise',{promiseObjectId:objectId,returnByValue:true})
-    //}
+    if (rst && rst.result && rst.result.className=='Promise'){
+      logger('!!! Promise',rst.result);//not expecting when using awaitPromise:true ...
+      var {className,description,objectId,subtype} = rst.result
+      rst = await cdp_call(ws,'Runtime.awaitPromise',{promiseObjectId:objectId,returnByValue:true})
+    }
     if (rst && rst.result && rst.result.value) return rst.result.value
     if (rst && rst.result && rst.result.className=='string') return rst.result.result.value
     if (rst && rst.result && rst.result.className=='function') {
@@ -122,7 +124,7 @@ async function module_exports(opts){
       let jsonString = result.result.value;
       return JSON.parse(jsonString)
     }
-    console.log('TODO cdp rst',rst)
+    logger('!!! TODO cdp rst',rst)
   }
 }
 

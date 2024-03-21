@@ -1,4 +1,4 @@
-var {o2s,s2o,tryx,tryp,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync} = require('./myes')
+var {o2s,s2o,tryx,tryp,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync,urlModule,safe,qstr,jevalx} = require('./myes')
 var init_time = now()
 var get_timestamp = (d)=>(d||new Date()).getTime();
 var get_time_iso = (d)=>((d||new Date())).toISOString();
@@ -36,8 +36,8 @@ async function a2tbl(a) {
   return s
 }
 
-module.exports = async (opts)=>{
-  var {req,res,url,body,argo,app_id}=opts;
+module.exports = async(Application)=>{
+  var {req,res,url,body,argo,app_id,reqHOST,reqPORT}=Application;
 
   const reqHeaders = req.headers;
   const acceptEncoding = reqHeaders['accept-encoding'];
@@ -53,10 +53,11 @@ module.exports = async (opts)=>{
   var statusCode = '200';
   if (!url || url.startsWith('?')){
     headers['Content-Type']='text/html;charset=utf-8';
-    let fwd_url = `${argo.static||''}index.html?${Math.random()}`; //TODO fwd to the ${host} etc
-    res.writeHead(statusCode, headers);
-    res.end(`<h2>...</h2><script>location.href='${fwd_url}';</script>`)
-    return
+    var data = Application.tryStaticFile(`${reqHOST}_${reqPORT}.htm`);//try this first
+    if (data) return Application.fastReturn({statusCode,headers,data});
+
+    let fwd_url = `${argo.static||''}index.html`;//back to index.html by default then
+    return Application.fastReturn({statusCode,headers,data:`<h2>...</h2><script>location.href='${fwd_url}';</script>`});
   }
   if (!body){
     headers['Content-Type']='application/json;charset=utf-8';
@@ -65,30 +66,55 @@ module.exports = async (opts)=>{
     return
   }
   //console.log({url,body})
-  console.log(url)
   if ('favicon.ico'==body) throw 'favicon'
+
+  var url_rest_o = urlModule.parse(url);
+  var sid = url_rest_o.pathname;
+  var url_hash = url_rest_o.hash;
+  console.log('app',{sid,body});
 
   ///////////////////
 
-  var ctx = {
-    md5, md5_ascii, o2s,s2o, a2csv,a2tbl,
+  const handler = {
+    get(target, prop, receiver) {
+      var objcache={};
+      var rt = Reflect.get(target, prop, receiver);
+      if (!rt && typeof(prop)=='string'){
+        rt = new Proxy({},{
+          async get(target2, prop2, receiver2) {
+            if (!objcache[prop]) {
+              var m = tryRequire('./api'+safe(prop));
+              if (typeof(m)=='function') m= await m();//TODO the args...
+              obj = objcache[prop] = m;
+            }
+            //var rt2 = obj[prop2];//...
+            console.log('DEBUG handle2',obj,prop2);
+            if(obj){
+              var rt2 = Reflect.get(obj, prop2, obj);
+              return rt2
+            }else throw 'no '+prop;
+          }
+        });
+      }
+      console.log('DEBUG handle',prop,'=>',rt);
+      return rt
+    }
+  };
 
-    //DONT DELETE FOR REF AND DEBUG
+  var ctx = {
+    //quick tools:
+    md5, md5_ascii,o2s,s2o,a2csv,a2tbl,init_time,now,safe,qstr,
+    $:jPathAsync,//e.g. $(news.history_o(945629),'data'),
+    reload:(m='aiwin')=>(typeof tryRequire('./'+m,true)),
     //myfilename:()=>require('path').basename(__filename),//
     //myfiletime:()=>fs.statSync(__filename).mtime,
     //argo,
     //app_id,
-    init_time,
-    now,
-    $:jPathAsync,//e.g. $(news.history_o(945629),'data')
 
-    reload:(m='aiwin')=>(typeof tryRequire('./'+m,true)),
-    //favicon:{ico:''},
-    tool:tryRequire('./apitool'),
-    news:tryRequire('./apinews'),
+    _: new Proxy({},handler),
+
   }
-  var myevalp = await require('./myevalp') //for internal.
-  var rst = await myevalp(body,ctx)
+  var rst = await jevalx(body,ctx);
   if (typeof rst == 'function') rst = await rst()
   var data = rst
   if (typeof rst != 'string') {
