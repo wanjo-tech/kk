@@ -14,6 +14,7 @@ var jevalx = (js,ctx,timeout=60000,vm=require('node:vm'))=>vm.createScript(
   `[(function(){return eval(arguments[0])})][0](${JSON.stringify(js)})`//my magic for 'this'
 ).runInContext(vm.createContext(ctx),{breakOnSigint:true,timeout});
 
+//for cf worker...
 function myResponse(rt, status = 200, webSocket = null, ext_headers={}) {
   let response = new Response(rt && typeof rt != "string" ? o2s(rt) : rt, { status, webSocket });
   for (var k in {
@@ -36,18 +37,19 @@ var urlModule = tryRequire('url')
 var fs = tryRequire('fs')
 
 var nothing = ()=>{};
-var date = () => new Date();
-var now = () => date().getTime()/1000;
+
+var date =()=>new Date();
+var get_timestamp = (d)=>(d||date()).getTime();
+var get_time_iso = (d)=>((d||date())).toISOString();
+var get_time_YmdHMS = (d)=>get_time_iso(d).slice(0,19).replace('T',' ');
+var now = (d) => get_timestamp(d)/1000;
+
 function decompress(response, encoding) {
   switch (encoding) {
-    case 'gzip':
-      return response.pipe(zlib.createGunzip());
-    case 'deflate':
-      return response.pipe(zlib.createInflate());
-    case 'br':
-      return response.pipe(zlib.createBrotliDecompress());
-    default:
-      return response;
+    case 'gzip': return response.pipe(zlib.createGunzip());
+    case 'deflate': return response.pipe(zlib.createInflate());
+    case 'br': return response.pipe(zlib.createBrotliDecompress());
+    default: return response;
   }
 }
 //in case no fetch() but https or http do.
