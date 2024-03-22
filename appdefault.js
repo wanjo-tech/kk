@@ -2,6 +2,8 @@ var {o2s,s2o,tryx,tryp,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath
 get_timestamp,get_time_iso,get_time_YmdHMS,
 } = require('./myes')
 var init_time = now()
+var myfilename = ()=>require('path').basename(__filename);
+var myfiletime= ()=>fs.statSync(__filename).mtime;
 
 /*
 TEST CASES after /?
@@ -35,8 +37,11 @@ async function a2tbl(a) {
   return s
 }
 
-module.exports = async(Application)=>{
+var module_exports = async(Application={})=>{
   var {req,res,url,body,argo,app_id,reqHOST,reqPORT}=Application;
+
+  //SECURITY VULNERABLE ;)
+  var reload = (m='app'+app_id,clear=true)=>{var mm = tryRequire('./'+m,clear); return (mm&&mm.init_time)?mm.init_time:typeof(mm)};
 
   const reqHeaders = req.headers;
   const acceptEncoding = reqHeaders['accept-encoding'];
@@ -60,57 +65,29 @@ module.exports = async(Application)=>{
   }
   if (!body){
     headers['Content-Type']='application/json;charset=utf-8';
-    res.writeHead(statusCode, headers);
-    res.end(o2s({code:404,msg:url}))
-    return
+    return Application.fastReturn({statusCode,headers,data})
   }
   //console.log({url,body})
   if ('favicon.ico'==body) throw 'favicon'
 
   var url_rest_o = urlModule.parse(url);
-  var sid = url_rest_o.pathname;
+  var sid = url_rest_o.pathname;//TOOO FOR SESSION
   var url_hash = url_rest_o.hash;
-  console.log('app',{sid,body});
-
-  ///////////////////
-
-  const handler = {
-    get(target, prop, receiver) {
-      var objcache={};
-      var rt = Reflect.get(target, prop, receiver);
-      if (!rt && typeof(prop)=='string'){
-        rt = new Proxy({},{
-          async get(target2, prop2, receiver2) {
-            if (!objcache[prop]) {
-              var m = tryRequire('./api'+safe(prop));
-              if (typeof(m)=='function') m= await m(Application);//DESIGN as apiXXX(Application)
-              obj = objcache[prop] = m;
-            }
-            //var rt2 = obj[prop2];//...
-            console.log('DEBUG handle2',obj,prop2);
-            if(obj){
-              var rt2 = Reflect.get(obj, prop2, obj);
-              return rt2
-            }else throw 'no '+prop;
-          }
-        });
-      }
-      console.log('DEBUG handle',prop,'=>',rt);
-      return rt
-    }
-  };
 
   var ctx = {
     //quick tools:
-    md5,md5_ascii,o2s,s2o,a2csv,a2tbl,init_time,now,safe,qstr,
+    md5,md5_ascii,o2s,s2o,a2csv,a2tbl,init_time,now,safe,qstr,get_time_iso,get_time_YmdHMS,get_timestamp,reload,
     $:jPathAsync,//e.g. $(news.history_o(945629),'data'),
-    reload:(m='aiwin')=>(typeof tryRequire('./'+m,true)),
-    //myfilename:()=>require('path').basename(__filename),//
-    //myfiletime:()=>fs.statSync(__filename).mtime,
-    //argo,
-    //app_id,
-
-    _: new Proxy({},handler),
+    //app_id,myfilename,myfiletime,argo,
+    type:(v)=>typeof(v),
+    //_:{},
+  }
+  for (var k of (argo.apis||'test').split(',')){
+    console.log('preload api',k);
+    var m = await tryRequire('./api'+k);
+    if (typeof(m)=='function') m= m(Application);//DESIGN !
+    //ctx._[k] = m;
+    ctx[k] = m;
   }
   var rst = await jevalx(body,ctx);
   if (typeof rst == 'function') rst = await rst()
@@ -123,7 +100,7 @@ module.exports = async(Application)=>{
       headers['Content-Encoding']='gzip';
       data = await gzip2s(data)
   }
-  res.writeHead(statusCode, headers);
-  res.end(data);
+  return Application.fastReturn({statusCode,headers,data})
 }
-
+module_exports.init_time = init_time;
+module.exports = module_exports;

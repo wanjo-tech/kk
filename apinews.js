@@ -45,12 +45,17 @@ var history_o = async(id,interval,pointscount,reload=0)=>{
 //}
 
 var headlines_s = async()=>{
-    var {data,headers} = await myfetch(`${web_entry}/news/headlines`,{headers:{'User-Agent':User_Agent},agent})
-    return [data.toString(),headers]
+    var {data,headers} = await myfetch(`${web_entry}/news/headlines`,{headers:{'User-Agent':User_Agent},agent});
+    var data_s = data.toString();
+    console.log('data_s',data_s,headers);
+    return [data_s,headers]
 }
+
 var latest_s = async()=>{
-    var {data,headers} = await myfetch(`${web_entry}/news/latest-news`,{headers:{'User-Agent':User_Agent},agent})
-    return [data.toString(),headers]
+    var {data,headers} = await myfetch(`${web_entry}/news/latest-news`,{headers:{'User-Agent':User_Agent},agent});
+    var data_s = data.toString();
+    console.log('latest_s',data_s,headers);
+    return [data_s,headers]
 }
 var headline_a = async()=>{
     var [data_s] = await headlines_s()
