@@ -85,9 +85,11 @@ var module_exports = async(Application={})=>{
   for (var k of (argo.apis||'test').split(',')){
     console.log('preload api',k);
     var m = await tryRequire('./api'+k);
-    if (typeof(m)=='function') m= m(Application);//DESIGN !
+    try{
+      if (typeof(m)=='function') m= await m(Application);//DESIGN !
+      ctx[k] = m;
+    }catch(ex){console.log('err',k,ex)}
     //ctx._[k] = m;
-    ctx[k] = m;
   }
   var rst = await jevalx(body,ctx);
   if (typeof rst == 'function') rst = await rst()
