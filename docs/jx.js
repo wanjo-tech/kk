@@ -47,6 +47,8 @@ findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling){if(n.hasAttribute?.(a))r
           if (!!jxTryEval(value,data,hWarn)) return rebuildWith(node,'j-if',value,data);
           else if (elseNode) return rebuildWith(elseNode,'j-else',value,data);
         case name=='j-else':return s2frg();
+        //case name=='j-bind':break;//one way TODO
+        //case name=='j-model':break;//two way TODO
         case name=='j-text':case name=='j-html':
           renAttribute(returnNode,name,value);
           var expand_value = returnNode[name=='j-text'?'textContent':'innerHTML'] = _jxExpand(jxTryEval(value,data,hErr))
