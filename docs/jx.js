@@ -50,13 +50,11 @@ findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling){if(n.hasAttribute?.(a))r
         case name=='j-text':case name=='j-html':
           renAttribute(returnNode,name,value);
           var expand_value = returnNode[name=='j-text'?'textContent':'innerHTML'] = _jxExpand(jxTryEval(value,data,hErr))
-          if (node.tagName=='INPUT') {
-            returnNode.setAttribute?.('value',expand_value);
-          }
+          if (node.tagName=='INPUT') returnNode.setAttribute?.('value',expand_value);
           break;
-        case name.startsWith(':'):renAttribute(returnNode,name,jxTryEval(value,data,hWarn),name.slice(1));break
+        case name.startsWith(':'):renAttribute(returnNode,name,jxTryEval(value,data,hErr),name.slice(1));break
         case name.startsWith('@'): var handler = function(event){ this.data = data; this.handler = handler;
-            var obj = jxTryEval(value,this,true); return (typeof obj=='function')?tryx(()=>obj(event),true):obj
+            var obj = jxTryEval(value,data,hErr);return (obj && obj.call)?tryx(()=>obj(event),hErr):obj;
           };returnNode.addEventListener(name.slice(1),handler);break
       }//switch
     }//for
