@@ -20,12 +20,12 @@ findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling&&n.nodeType!==1?n.nextSib
     if (node.tagName=='TEMPLATE') {//SPECIAL FOR <TEMPLATE/>
       node = s2frg(node.innerHTML);
     }
-    var returnNode = node.cloneNode(),
+    let returnNode = node.cloneNode(),
       hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),''),
       hErr = ex=>(returnNode.setAttribute?.('j-err',''+ex),'['+ex+']'),
       renAttribute=(d,n,v='',n2)=>(d.removeAttribute(n),v && d.setAttribute(n2===undefined?(n+'-'):n2,v)),
       rebuildWith=(nn,attrName,attrVal,dt,rt)=>(rt=nn.cloneNode(true),renAttribute(rt,attrName,attrVal),_jxBuild(rt,dt));
-    for (var {name,value} of [...node.attributes||[]]) {
+    for (let {name,value} of [...node.attributes||[]]) {
       switch (true) {
         case name.startsWith(':'):renAttribute(returnNode,name,jxTryEval(value,data,hWarn),name.slice(1));break
         case name.startsWith('@'): var handler = function(event){ this.data = data; this.handler = handler;
@@ -36,7 +36,7 @@ findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling&&n.nodeType!==1?n.nextSib
             if (!match) returnNode.setAttribute?.('j-err','for');
             else{
               const [_,valVar,keyVar,idxVar,itemsStr] = match;
-              var items = jxTryEval(itemsStr,data) || {}
+              let items = jxTryEval(itemsStr,data) || {}
               if (typeof items=='number') items = Array.from({ length: items }, (_, i) => i);
               returnNode = s2frg();
               Object.entries(items).forEach(([key, val], idx)=>{
@@ -45,7 +45,7 @@ findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling&&n.nodeType!==1?n.nextSib
               })
             };return returnNode;
         case name=='j-if':
-          var elseNode = findSiblingWithAttribute(node,'j-else');
+          let elseNode = findSiblingWithAttribute(node,'j-else');
           if (node.parentNode){
             elseNode && node.parentNode.removeChild(elseNode);
             node.parentNode.removeChild(node);
@@ -77,8 +77,8 @@ findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling&&n.nodeType!==1?n.nextSib
     const pca = [...pn.childNodes||[]]
       const nca = [...nn.childNodes||[]]
       const maxLength = Math.max(pca.length, nca.length)
-      for (var i = 0; i < maxLength; i++) {
-        var pc=pca[i],nc=nca[i];
+      for (let i = 0; i < maxLength; i++) {
+        let pc=pca[i],nc=nca[i];
         if (nc && nc.tagName=='SCRIPT' && (!nc.type||nc.type=='text/javascript')){
           nc = jxCloneJs(nc);
           if (pc) pn.replaceChild(nc,pc);else pn.appendChild(nc)
