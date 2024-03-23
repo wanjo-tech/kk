@@ -13,7 +13,7 @@ s2ela=s=>[...s2frg(s).childNodes],
 s2el=(s)=>s2frg(s).childNodes[0],
 jxExtend=(o)=>((''+o)==='[object Object]'?o2s(o):(o||'')),
 jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src','innerHTML'].filter(a=>el[a]).map(a=>({[a]:el[a]}))),
-findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling&&n.nodeType!==1?n.nextSibling:n.hasAttribute&&n.hasAttribute(a)?n:null);return n};
+findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling){if(n.hasAttribute?.(a))return n}};
   function _jxBuild(node, data={}){
     if (node.nodeType === 3)//TEXT_NODE
       return tbx.createTextNode(node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxExtend(jxTryEval(expr,data,ex=>'['+ex+']'))));
@@ -23,7 +23,7 @@ findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling&&n.nodeType!==1?n.nextSib
     let returnNode = node.cloneNode(),
       hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),''),
       hErr = ex=>(returnNode.setAttribute?.('j-err',''+ex),'['+ex+']'),
-      renAttribute=(d,n,v='',n2)=>(d.removeAttribute(n),v && d.setAttribute(n2===undefined?(n+'-'):n2,v)),
+      renAttribute=(d,n,v='',n2)=>(d.removeAttribute?.(n),v && d.setAttribute?.(n2===undefined?(n+'-'):n2,v)),
       rebuildWith=(nn,attrName,attrVal,dt,rt)=>(rt=nn.cloneNode(true),renAttribute(rt,attrName,attrVal),_jxBuild(rt,dt));
     for (let {name,value} of [...node.attributes||[]]) {
       switch (true) {
@@ -50,10 +50,9 @@ findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling&&n.nodeType!==1?n.nextSib
             elseNode && node.parentNode.removeChild(elseNode);
             node.parentNode.removeChild(node);
           }
-          if (!!jxTryEval(value,data,hWarn)) returnNode = rebuildWith(node,'j-if',value,data);
-          else if (elseNode) returnNode = rebuildWith(elseNode,'j-else',value,data);
-          else returnNode = s2frg();//important
-        case name=='j-else':return returnNode;//
+          if (!!jxTryEval(value,data,hWarn)) return rebuildWith(node,'j-if',value,data);
+          else if (elseNode) return rebuildWith(elseNode,'j-else',value,data);
+        case name=='j-else':return s2frg();
         case name=='j-text':
         case name=='j-html':
           renAttribute(returnNode,name,value);

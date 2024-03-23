@@ -11,7 +11,7 @@
 <script src='jx.js'></script>
 <hr/>
 <button class="mycss-button" onclick='Build()'>Build</button>
-<button class="mycss-button" onclick='Render()'>Render</button> tpl=&nbsp;
+<button class="mycss-button" onclick='Render()'>Render</button> tpl test=&nbsp;
 <a href='javascript:testIf()'>j-if</a>&nbsp;
 <a href='javascript:testFor()'>j-for</a>&nbsp;
 <a href='javascript:testTestVar()'>var</a>
@@ -31,10 +31,12 @@ thisDate={{thisDate}}
 <div>j-text <span j-text="v+','+k+','+i"></span></div>
 </div>
 </template>
-<template id='tplIf'>
+<template id='tplIf'><div j-if="true">111 should see</div>
+<div j-else>112 should NOT see</div>
+<div j-if="false">221 should NOT see</div>
+<div j-else>222 should see</div>
+<div j-else>333 should NOT see for orphan j-else</div>
 thisDate={{thisDate}}
-<div j-if='f1a'>j-if f1a={{f1a}}</div>
-<div j-else>j-else f1a={{typeof fla}}</div>
 <div j-html="'<h3>test j-html</h3>'">should-not-see-this</div>
 </template>
 <textarea class="mycss-textarea" id='tplStage' style="min-height:100px" oldstyle="border:1px solid;min-width:640px;min-height:150px" spellcheck="false">
