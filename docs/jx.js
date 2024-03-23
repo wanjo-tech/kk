@@ -12,7 +12,8 @@ s2bdy=s=>(doc=tbx.implementation.createHTMLDocument(),doc.body.innerHTML=s,doc.b
 s2ela=s=>[...s2frg(s).childNodes],
 s2el=(s)=>s2frg(s).childNodes[0],
 jxExtend=(o)=>((''+o)==='[object Object]'?o2s(o):(o||'')),
-jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src','innerHTML'].filter(a=>el[a]).map(a=>({[a]:el[a]}))),findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling&&n.nodeType!==1?n.nextSibling:n.hasAttribute&&n.hasAttribute(a)?n:null);return n};
+jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src','innerHTML'].filter(a=>el[a]).map(a=>({[a]:el[a]}))),
+findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling&&n.nodeType!==1?n.nextSibling:n.hasAttribute&&n.hasAttribute(a)?n:null);return n};
   function _jxBuild(node, data={}){
     if (node.nodeType === 3)//TEXT_NODE
       return tbx.createTextNode(node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>jxExtend(jxTryEval(expr,data,ex=>'['+ex+']'))));
@@ -20,10 +21,10 @@ jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src
       node = s2frg(node.innerHTML);
     }
     let returnNode = node.cloneNode(),
-        hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),''),
-        hErr = ex=>(returnNode.setAttribute?.('j-err',''+ex),'['+ex+']'),
-        renAttribute=(d,n,v='',n2)=>(d.removeAttribute(n),d.setAttribute(n2===undefined?(n+'-'):n2,v)),
-        rebuildWith=(nn,attrName,attrVal,dt,rt)=>(rt=nn.cloneNode(true),renAttribute(rt,attrName,attrVal),_jxBuild(rt,dt));
+      hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),''),
+      hErr = ex=>(returnNode.setAttribute?.('j-err',''+ex),'['+ex+']'),
+      renAttribute=(d,n,v='',n2)=>(d.removeAttribute(n),v && d.setAttribute(n2===undefined?(n+'-'):n2,v)),
+      rebuildWith=(nn,attrName,attrVal,dt,rt)=>(rt=nn.cloneNode(true),renAttribute(rt,attrName,attrVal),_jxBuild(rt,dt));
     for (let {name,value} of [...node.attributes||[]]) {
       switch (true) {
         case name.startsWith(':'):renAttribute(returnNode,name,jxTryEval(value,data,hWarn),name.slice(1));break
@@ -39,9 +40,9 @@ jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src
               if (typeof items=='number') items = Array.from({ length: items }, (_, i) => i);
               returnNode = s2frg();
               Object.entries(items).forEach(([key, val], idx)=>{
-                  const loopData={...data,[valVar]:val,...(keyVar&&{[keyVar]:key}),...(idxVar&&{[idxVar]:idx})};
-                  returnNode.appendChild(rebuildWith(node,'j-for',value,loopData));
-                  })
+                const loopData={...data,[valVar]:val,...(keyVar&&{[keyVar]:key}),...(idxVar&&{[idxVar]:idx})};
+                returnNode.appendChild(rebuildWith(node,'j-for',value,loopData));
+              })
             };return returnNode;
         case name=='j-if':
           let elseNode = findSiblingWithAttribute(node,'j-else');
@@ -49,8 +50,9 @@ jxCloneJs=(el)=>Object.assign(tbx.createElement(el.tagName),...['id','type','src
             elseNode && node.parentNode.removeChild(elseNode);
             node.parentNode.removeChild(node);
           }
-          if (!!jxTryEval(value,data,hWarn)) return rebuildWith(node,'j-if',value,data);
-          if (elseNode) return rebuildWith(node,'j-else',value,data)
+          if (!!jxTryEval(value,data,hWarn)) returnNode = rebuildWith(node,'j-if',value,data);
+          else if (elseNode) returnNode = rebuildWith(elseNode,'j-else',value,data);
+          else returnNode = s2frg();//important
         case name=='j-else':return returnNode;//
         case name=='j-text':
         case name=='j-html':
