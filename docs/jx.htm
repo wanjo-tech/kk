@@ -25,16 +25,14 @@
 </div>
 <div>test x={{x}} or this.x={{this.x}} or window.x={{window.x}}</div>
 </template>
-<template id='tplFor'>
-thisDate={{thisDate}}
+<template id='tplFor'>thisDate={{thisDate}}
 <div j-for='v,k,i in data'>
 <div>v={{v}},k={{k}},i={{i}}</div>
 <div>j-text <span j-text="v+','+k+','+i"></span></div>
 </div>
 </template>
 
-<template id='tplScript'>
-<script> console.log(11,Math.random()) </script>
+<template id='tplScript'><script> console.log(11,Math.random()) </script>
 <div>
   <script> console.log(22,Math.random()) </script>
 </div>
@@ -46,7 +44,8 @@ thisDate={{thisDate}}
 <div j-else>222 should see</div>
 <div j-else>333 should NOT see for orphan j-else</div>
 thisDate={{thisDate}}
-<div j-html="'<h3>test j-html</h3>'">should-not-see-this</div>
+<div j-html="'<h3>test1 j-html</h3>'"></div>
+<div j-html="'<h3>test2 j-html</h3>'">should-see-this</div>
 </template>
 
 <textarea class="mycss-textarea" id='tplStage' style="min-height:100px" oldstyle="border:1px solid;min-width:640px;min-height:150px" spellcheck="false">

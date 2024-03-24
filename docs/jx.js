@@ -1,5 +1,6 @@
 //kk.datakk.com/jx.htm
-var jx = (tbx=window.document)=>{const VER=240323.5,
+var jx = (tbx=window.document,__='j-')=>{const VER=240324.2,
+JIF=__+'if',JELSE=__+'else',JFOR=__+'for',JTEXT=__+'text',JHTML=__+'html',JWARN=__+'warn',JERR=__+'err',
 tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}},
 jev=function(){with(this)return eval(arguments[0])},
 jxEval=(js,ctx)=>jev.bind(ctx)(js),
@@ -19,15 +20,15 @@ function _jxBuild(node, data={}){
     return tbx.createTextNode(node.textContent.replace(/\{\{(.*?)\}\}/g,(match,expr)=>_jxExpand(jxTryEval(expr,data,ex=>'['+ex+']'))));
   if (node.tagName=='TEMPLATE') node = s2frg(node.innerHTML);
   var returnNode = node.cloneNode(),
-    hWarn = ex=>(returnNode.setAttribute?.('j-warn',''+ex),''),
-    hErr = ex=>(returnNode.setAttribute?.('j-err',''+ex),'['+ex+']'),
+    hWarn = ex=>(returnNode.setAttribute?.(JWARN,''+ex),''),
+    hErr = ex=>(returnNode.setAttribute?.(JERR,''+ex),'['+ex+']'),
     renAttribute=(d,n,v='',n2)=>(d.removeAttribute?.(n),v && d.setAttribute?.(n2===undefined?(n+'-'):n2,v)),
     rebuildWith=(nn,attrName,attrVal,dt,rt)=>(rt=nn.cloneNode(true),renAttribute(rt,attrName,attrVal),_jxBuild(rt,dt));
   for(const{name,value}of[...node.attributes||[]]){
     switch (true) {
-      case name=='j-for':
+      case name==JFOR:
         const match = value.match(/^\(?(\w+)(?:,\s*(\w+))?(?:,\s*(\w+))?[\)\s]?\s*in\s*(.+)$/)
-          if (!match) returnNode.setAttribute?.('j-err','for');
+          if (!match) returnNode.setAttribute?.(JERR,'for');
           else{
             const [_,valVar,keyVar,idxVar,itemsStr] = match;
             var items = jxTryEval(itemsStr,data) || {}
@@ -35,21 +36,22 @@ function _jxBuild(node, data={}){
             returnNode = s2frg();
             Object.entries(items).forEach(([key, val], idx)=>{
               const loopData={...data,[valVar]:val,...(keyVar&&{[keyVar]:key}),...(idxVar&&{[idxVar]:idx})};
-              returnNode.appendChild(rebuildWith(node,'j-for',value,loopData));
+              returnNode.appendChild(rebuildWith(node,JFOR,value,loopData));
             })
           };return returnNode;
-      case name=='j-if':
-        var elseNode = _findSiblingWithAttribute(node,'j-else');
+      case name==JIF:
+        var elseNode = _findSiblingWithAttribute(node,JELSE);
         if (node.parentNode){
           elseNode && node.parentNode.removeChild(elseNode);
           node.parentNode.removeChild(node);
         }
-        if (!!jxTryEval(value,data,hWarn)) return rebuildWith(node,'j-if',value,data);
-        else if (elseNode) return rebuildWith(elseNode,'j-else',value,data);
-      case name=='j-else':return s2frg();
-      case name=='j-text':case name=='j-html':
+        if (!!jxTryEval(value,data,hWarn)) return rebuildWith(node,JIF,value,data);
+        else if (elseNode) return rebuildWith(elseNode,JELSE,value,data);
+      case name==JELSE:return s2frg();
+      case name==JTEXT:case name==JHTML:
         renAttribute(returnNode,name,value);
-        var expand_value = returnNode[name=='j-text'?'textContent':'innerHTML'] = _jxExpand(jxTryEval(value,data,hErr))
+        var expand_value = _jxExpand(jxTryEval(value,data,hErr));
+        returnNode[name==JTEXT?'textContent':'innerHTML'] = expand_value;
         if (node.tagName=='INPUT') returnNode.setAttribute?.('value',expand_value);
         break;
       case name.startsWith(':'):renAttribute(returnNode,name,jxTryEval(value,data,hErr),name.slice(1));break
@@ -71,37 +73,28 @@ function _mayDifferent(node1, node2) {
   if (node1.attributes.length !== node2.attributes.length) return true;
   return [...node1.attributes].some(({name}=attr)=>(node1.getAttribute(name)!==node2.getAttribute(name)))
 }
-//WARN: the nn could be touched.
 function _jxUpsert(pn, nn, skipJsTag=false){
   const pca = [...pn.childNodes||[]],nca = [...nn.childNodes||[]],maxLength = Math.max(pca.length, nca.length);
   for(var i=0;i<maxLength;i++){
     var pc=pca[i],nc=nca[i];
     if (!pc && nc) pn.appendChild(nc);
     else if (pc && !nc) pn.removeChild(pc);
-    else if ((nc && nc.tagName=='SCRIPT' && (!nc.type||nc.type=='text/javascript') && !skipJsTag) || _mayDifferent(pc,nc))
+    else if ((nc && nc.tagName=='SCRIPT'&&(!nc.type||nc.type=='text/javascript')&&!skipJsTag)||_mayDifferent(pc,nc))
       pn.replaceChild(nc, pc);
     else _jxUpsert(pc, nc, skipJsTag)
   }
+  return pn
 }
-//TODO improve later..
-function jxMon(data, onChange) {
+function jxMon(data, onChange){
   const handler = {
     get(target, property, receiver) {
-      try { var rt = new Proxy(target[property], handler);
-      } catch (err) { var rt = Reflect.get(target, property, receiver); }
-      return rt;
+      return tryx(()=>new Proxy(target[property], handler),(err)=>Reflect.get(target, property, receiver))
     },
-    set(target, property, value) {
-      onChange(property, value);
-      return Reflect.set(target, property, value);
-    }
+    set(target, property, value) { onChange(property, value); return Reflect.set(target, property, value); }
   };
-  setTimeout(onChange,1);//trigger the first onChange
+  setTimeout(onChange,1);//landing;)
   return new Proxy(data, handler);
 }
-function jxRender(tgt,src,data){
-  _jxUpsert(tgt=frg4s(tgt),_jxBuild(src=frg4s(src),data))
-  return tgt
-}
+var jxRender=(tgt,src,data)=>_jxUpsert(tgt=frg4s(tgt),_jxBuild(src=frg4s(src),data));
 return {VER,jxRender,jxEval,jxTryEval,_jxBuild,_jxUpsert,tryx,s2o,o2s,s2bdy,s2el,s2ela,s2frg,frg2s,frg4s,jxMon}
 }
