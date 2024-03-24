@@ -1,5 +1,5 @@
 //kk.datakk.com/jx.htm
-var jx = (tbx=window.document,__='j-')=>{const VER=240324.2,
+var jx = (tbx=window.document,__='j-')=>{const VER=240324.3,
 JIF=__+'if',JELSE=__+'else',JFOR=__+'for',JTEXT=__+'text',JHTML=__+'html',JWARN=__+'warn',JERR=__+'err',
 tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}},
 jev=function(){with(this)return eval(arguments[0])},
@@ -12,7 +12,7 @@ frg2s=frg=>frg?[...frg.childNodes].reduce((h,n)=>(h+(n.outerHTML||n.textContent)
 s2bdy=s=>(doc=tbx.implementation.createHTMLDocument(),doc.body.innerHTML=s,doc.body),
 s2ela=s=>[...s2frg(s).childNodes],
 s2el=(s)=>s2frg(s).childNodes[0],
-_jxExpand=(o)=>((''+o)==='[object Object]'?o2s(o):(o||'')),
+_jxExpand=(o)=>typeof(o||'')=='string'?(o||''):o2s(o),
 _findSiblingWithAttribute=(n,a)=>{while(n=n.nextSibling){if(n.hasAttribute?.(a))return n}},
 frg4s=(s)=>(typeof(s)=='string')?(s[0]=='#'?tbx.querySelector(s):s2frg(s)):s;
 function _jxBuild(node, data={}){
