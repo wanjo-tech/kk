@@ -91,7 +91,8 @@ function jxMon(data,onChange){
       return tryx(()=>new Proxy(target[property], handler),(err)=>Reflect.get(target, property, receiver))
     },
     set(target, property, value) {
-      setTimeout(()=>onChange(property, value, Reflect.get(target, property, target)),1);
+      var old = Reflect.get(target, property, target);
+      setTimeout(()=>onChange(property, value, old),1);
       return Reflect.set(target, property, value);
     }
   });
