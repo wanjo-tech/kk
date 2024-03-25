@@ -1,0 +1,78 @@
+//@version=5
+strategy("MultiPeriodOverBS", overlay=true, margin_long=100, margin_short=100)
+calcMain_imax = 4999
+calcMain(hr,prz_a,vol_a,time_a,amt_a)=>
+    sumVol = 0.0
+    sumTime = 0
+    sumAmt = 0.0
+    sumAbsPrz = 0.0
+    prevPrz = 0.0
+    sumAbsPrzLog = 0.0
+    prevPrzLog = 0.0
+    sumPrz = 0.0
+    sumPrzLog = 0.0
+    i = 0
+    while sumTime < hr * 3600 and i < calcMain_imax
+        if prevPrz>0.0
+            sumAbsPrz +=  math.abs(prevPrz - prz_a[i])
+            sumAbsPrzLog += math.abs(math.log(prevPrz) - math.log(prz_a[i]))
+            sumPrz += prevPrz - prz_a[i]
+            sumPrzLog += math.log(prevPrz) - math.log(prz_a[i])
+        prevPrz := prz_a[i]
+        sumTime := sumTime + nz(time_a[i]-time_a[i+1])
+        sumVol := sumVol + nz(vol_a[i])
+        sumAmt := sumAmt + nz(amt_a[i])
+        i := i + 1
+    [hr,i,sumPrz,sumAbsPrz,sumPrzLog,sumAbsPrzLog,sumVol,sumAmt,sumTime]
+symbol0 = syminfo.tickerid
+period0 = '15'
+[prz0a,vol0a,time0a] = request.security(symbol0, period0, [close,volume,time/1000])
+amt0a = vol0a * prz0a
+[hr,i,sumPrz,sumAbsPrz,sumPrzLog,sumAbsPrzLog,sumVol,sumAmt,sumTime]=calcMain(1,prz0a,vol0a,time0a,amt0a)
+rsiValue6 = ta.rsi(sumAmt / sumVol, 6)
+rsiValue12 = ta.rsi(sumAmt / sumVol, 12)
+symbol_D = symbol0
+period_D = 'D'
+[prz_Da,vol_Da,time_Da] = request.security(symbol_D, period_D, [close,volume,time/1000])
+amt_Da = vol_Da * prz_Da
+[hr_D,i_D,sumPrz_D,sumAbsPrz_D,sumPrzLog_D,sumAbsPrzLog_D,sumVol_D,sumAmt_D,sumTime_D]=calcMain(24,prz_Da,vol_Da,time_Da,amt_Da)
+przx_Da = sumAmt_D / sumVol_D
+rsiValue_D7 = ta.rsi(przx_Da, 7)// plot(-50+rsiValue_D7, title="D7", color=color.blue)
+rsiValue_D14 = ta.rsi(przx_Da, 14)//plot(ta.rsi(prz_Da,14), title="D", color=color.blue) // should same as rsiValue_D14
+
+oversold = (rsiValue6 < 33 and rsiValue_D14 < 66)
+bgcolor( oversold ? color.new(color.green, 90) : na, title="oversold背景色")
+overbrought = (rsiValue6 > 66 and rsiValue_D14 > 33)
+bgcolor( overbrought ? color.new(color.red, 90) : na, title="overbrought背景色")
+
+orderQty = strategy.equity / 20 / close
+var float lastShort = na
+var float lastLong = na
+var float lastPrz = na
+
+//for alert:
+multi_over = -50 + math.avg(rsiValue_D14,rsiValue_D7,rsiValue12,rsiValue6)
+//for side load
+//plot(multi_over, title="MultiOverVal", color=color.black,linewidth = 2)
+
+//TMP GRID-TRADING
+var gridsize = 0.03
+if na(lastPrz)
+    lastPrz := close
+    lastLong := close
+    lastShort := close
+if multi_over>25 and close > lastShort * (1+gridsize)
+    strategy.entry("SSS", strategy.short, qty = orderQty)
+    label.new(bar_index, high, "S", color=color.green, style=label.style_label_lower_right, textcolor=color.yellow)
+    lastShort := close
+    lastLong:=close
+    lastPrz := close
+if multi_over<-25 and close < lastLong * (1-gridsize)
+    strategy.entry("BBB", strategy.long, qty = orderQty)
+    label.new(bar_index, high, "B", color=color.red, style=label.style_label_upper_right, textcolor=color.yellow)
+    lastLong := close
+    lastShort:=close
+    lastPrz := close
+plot(lastPrz)
+
+

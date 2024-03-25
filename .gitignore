@@ -1,4 +1,3 @@
-/*.swp
 /node_modules
 /package-lock.json
-/chrome_ext/x/*.swp
+*.swp
