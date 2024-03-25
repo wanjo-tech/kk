@@ -12,9 +12,19 @@ var jeval=(js,ctx)=>jev.bind(ctx)(js);
 
 //for backend:
 var dirtyPause=(i=11)=>(require('child_process').execSync(`"${process.execPath}" -e "setTimeout(()=>true,${i})"`),true);
-var jevalx = (js,ctx,timeout=60000,vm=require('node:vm'))=>vm.createScript((js="delete globalThis;delete Symbol;delete Error;delete process;const Error=function(...a){return [...a]};"+js,
-  `[(function(){return eval(arguments[0])})][0](${JSON.stringify(js)})`//my magic for 'this'
-)).runInContext(vm.createContext(ctx),{breakOnSigint:true,timeout});
+
+//long march for vm (https://github.com/patriksimek/vm2/issues/533)
+//test cases:
+//delete process;[].constructor.constructor(`return(Object.keys(this))`)()
+//delete([].constructor.constructor);[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(global.process))")())`)()
+//[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(process))")())`)()
+//delete process;[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(process))")())`)()
+//[].constructor.constructor(`return(this.constructor.constructor("return(typeof(Symbol))")())`)()
+//[].constructor.constructor(`return(this.constructor.constructor('return(this.constructor.constructor("return(typeof(process))")())')())`)()
+var jevalx = (js,ctx,timeout=60000,vm=require('node:vm'))=>{
+  const processWtf=process;process=undefined;const SymbolWtf=Symbol;Symbol=undefined;const ErrorWtf=Error;Error=undefined;
+  return vm.createScript(`eval(${JSON.stringify(js)})`).runInContext(vm.createContext(ctx),{breakOnSigint:true,timeout})
+}
 
 //for cf worker...
 function myResponse(rt, status = 200, webSocket = null, ext_headers={}) {
