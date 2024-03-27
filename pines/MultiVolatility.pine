@@ -1,0 +1,70 @@
+//@version=5
+indicator("波动副", shorttitle="波动副")
+calcMain_imax = 4999
+//对时计算函数(Time-Aligned Calculation)
+calcMain(hr,prz_a,vol_a,time_a,amt_a)=>
+    float[] vlta = array.new_float() //对数差分
+    float[] lnra = array.new_float() //累积对数收益
+    sumVol = 0.0
+    sumTime = 0
+    sumAmt = 0.0
+    sumAbsPrz = 0.0
+    prevPrz = 0.0
+    sumAbsPrzLog = 0.0
+    prevPrzLog = 0.0
+    sumPrz = 0.0
+    sumPrzLog = 0.0
+    przLogDiff = 0.0
+    przLog = 0.0
+    i = 0
+    while sumTime < hr * 3600 and i < calcMain_imax
+        if prevPrz>0.0
+            przLog := math.log(prz_a[i])
+            sumAbsPrz +=  math.abs(prevPrz - prz_a[i])
+            przLogDiff := przLog - math.log(prevPrz) //对数差分用于计算波动率.
+            //sumPrzLog += przLogDiff
+            sumAbsPrzLog += math.abs(przLogDiff)
+            sumPrz += prevPrz - prz_a[i]
+            vlta.push(przLogDiff) //对数收益率的标准差实际上是sharpe ratio的变体；还能用于计算无量纲的COV(变异系数)
+            lnra.push(przLog)
+        sumTime := sumTime + nz(time_a[i]-time_a[i+1])
+        //sumVol := sumVol + nz(vol_a[i])
+        //sumAmt := sumAmt + nz(amt_a[i])
+        prevPrz := prz_a[i]
+        i := i + 1
+    //[sumAmt / sumVol, sumAbsPrz/hr/prz_a, sumAbsPrzLog/hr, sumPrz/hr/prz_a, sumPrzLog/hr]
+    //[sumPrz,sumAbsPrz,sumTime]
+    //[hr,i,sumPrz,sumAbsPrz,sumPrzLog,sumAbsPrzLog,sumVol,sumAmt,sumTime]
+    [array.stdev(vlta),array.stdev(lnra)]
+
+symbol0 = syminfo.tickerid
+[prz0a_d,vol0a_d,time0a_d,amt0a_d] = request.security(symbol0, 'D', [close,volume,time/1000, close*volume])
+
+logdiff_d = math.log(prz0a_d / prz0a_d[1]) //对数差分
+
+bs365=100*math.sqrt(365)
+bs252=100*math.sqrt(252)
+
+//传统波动率：计算过去20天对数差分的标准差, 其实只对日线图才有少少意义，否则是错的
+volatility20d = ta.stdev(logdiff_d, 20)
+plot(timeframe.period=='D'?(bs252*volatility20d):na,color=color.green)
+
+//对时标准化波动率（基于D数据重新统计，用于在细周期图仍能画出“传统波动率”。但因为对时，所以跟传统有区别）
+[vlt20d_,lnr20d_] = calcMain(24*20,prz0a_d,vol0a_d,time0a_d,amt0a_d)
+plot(bs365*vlt20d_,color=color.red)
+
+//对时波动率（基于15分钟数据统计,所以比上面的丝滑）
+[prz0a_15m,vol0a_15m,time0a_15m,amt0a_15m] = request.security(symbol0, '15', [close,volume,time/1000, close*volume])
+[vlt20d,lnr20d] = calcMain(24*20,prz0a_15m,vol0a_15m,time0a_15m,amt0a_15m)
+//plot(timeframe.period=='D'?na:(100*math.sqrt(365)*vlt20d),color=color.blue)
+plot(bs365*vlt20d,color=color.blue) 
+
+//七天对时标准化波动率
+[vlt7d,lnr7d] = calcMain(24*7,prz0a_15m,vol0a_15m,time0a_15m,amt0a_15m)
+plot(bs365*vlt7d,color=color.black) 
+
+//测试对时x天年化收益标准差（还没完善）
+plot(bs365*lnr20d/20,color=color.orange)
+plot(bs365*lnr7d/7,color=color.purple)
+
+
