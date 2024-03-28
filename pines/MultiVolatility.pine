@@ -1,6 +1,6 @@
 //@version=5
 indicator("MultiVolatility", shorttitle="MultiVolatility")
-import wanjo-tech/public/5 as public
+import wanjo-tech/public/6 as public
 
 //sourceLongInput = input.source(low, "Enter Long after crossing")
 SP2PVTA(sym,period)=>request.security(sym,period,[close,volume,time/1000, close*volume])
@@ -33,5 +33,6 @@ plot(bs365*vlt7d,color=color.black,linewidth = 2)
 //测试对时x天年化收益标准差，跟为跟差分数量级不一样，放在另一个副图；
 // plot(bs365*lnr20d/20,color=color.orange)
 // plot(bs365*lnr7d/7,color=color.purple)
+
 
 
