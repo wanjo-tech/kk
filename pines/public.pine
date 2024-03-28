@@ -1,0 +1,58 @@
+//@version=5
+//@description Public Lib by wanjo-tech
+library("public")
+
+//usage example:
+//SP2PVTA(string sym,string period)=>request.security(sym,period,[close,volume,time/1000, close*volume])
+// symbol0 = syminfo.tickerid
+// [prz0a_d,vol0a_d,time0a_d,amt0a_d] = SP2PVTA(symbol0,'D')
+// [prz0a_15m,vol0a_15m,time0a_15m,amt0a_15m] = SP2PVTA(symbol0,'15')
+//[vlt20d_,lnr20d_] = calcMainStd(24*20,prz0a_d,vol0a_d,time0a_d,amt0a_d)
+//plot(bs365*vlt20d_,color=color.red)
+
+var int timealigned_imax = 4999
+export TimeAligned(int hr, series float prz_a, series float vol_a, series float time_a, series float amt_a) =>
+    float[] vlta = array.new_float() //for Std LogDiff
+    float[] lnra = array.new_float() //for Std LogReturn
+    float sumTime = 0
+    float sumVol = 0.0
+    float sumAmt = 0.0
+    float sumAbsPrz = 0.0
+    float sumAbsPrzLog = 0.0
+    float sumPrz = 0.0
+    float sumPrzLog = 0.0
+    int i = 0
+    float prevPrz = 0.0
+    float przLogDiff = 0.0
+    float przLog = 0.0
+    while i < timealigned_imax and sumTime < hr * 3600
+        float prz_a_i = prz_a[i]
+        float time_a_i = time_a[i]
+        float time_a_i_prev = time_a[i+1]
+        float vol_a_i = vol_a[i]
+        float amt_a_i = amt_a[i]
+        if prevPrz > 0.0
+            przLog := math.log(prz_a_i) // Log Price
+            przLogDiff := przLog - math.log(prevPrz)
+            sumAbsPrzLog += math.abs(przLogDiff)
+            sumAbsPrz += math.abs(prevPrz - prz_a_i)
+            array.push(vlta, przLogDiff)
+            array.push(lnra, przLog) // for LogReturn std, related to sharpe ratio and CoV too.
+            sumTime := sumTime + math.abs(nz(time_a_i - time_a_i_prev, 0)) // for Time Alignment
+            sumVol := sumVol + nz(vol_a_i, 0)
+            sumAmt := sumAmt + nz(amt_a_i, 0)
+        prevPrz := prz_a_i
+        i := i + 1
+    if i > 0
+        float prz_a_0 = prz_a[0]
+        sumPrz := prevPrz - prz_a_0
+        sumPrzLog := math.log(prevPrz) - math.log(prz_a_0)
+    [hr, i, sumPrz, sumAbsPrz, sumPrzLog, sumAbsPrzLog, sumVol, sumAmt, sumTime, array.stdev(vlta), array.stdev(lnra)]
+
+//
+export StdTimeAligned(int hr, series float prz_a, series float vol_a, series float time_a, series float amt_a) =>
+    [hrx,i,sumPrz,sumAbsPrz,sumPrzLog,sumAbsPrzLog,sumVol,sumAmt,sumTime,std_vlta,std_lnra]=TimeAligned(hr,prz_a,vol_a,time_a,amt_a)
+    [std_vlta,std_lnra]
+
+math_log_2 = math.log(2)
+export lg2(float x) => math.log(x) / math_log_2
