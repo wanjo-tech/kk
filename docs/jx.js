@@ -1,5 +1,5 @@
 var jx = (tbx=window.document,__='j-')=>{const VER=240324.3,DOC='kk.datakk.com',
-JIF=__+'if',JELSE=__+'else',JFOR=__+'for',JTEXT=__+'text',JHTML=__+'html',JWARN=__+'warn',
+JIF=__+'if',JELSE=__+'else',JFOR=__+'for',JTEXT=__+'text',JHTML=__+'html',JWARN=__+'warn',JBIND=__+'bind',
 tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}},
 jev=function(){with(arguments[1]||this)return eval(arguments[0])},
 jxEval=(js,ctx,that)=>jev.bind(that||ctx)(js,ctx),
@@ -44,6 +44,14 @@ function _jxBuild(node, data={}){
       else if(elseNode) return rebuildWith(elseNode,JELSE,value,data);
       else return s2frg();
     }else if(name==JELSE) { return s2frg();
+    //TODO auto rendering sub Nodes...
+    //}else if(name==JBIND){
+    //  renAttribute(returnNode,name,value);
+    //  let handler = function(event){
+    //    console.log('TODO handler',event)
+    //    //if(node.tagName=='INPUT') returnNode.setAttribute?.('value',expand_value);
+    //  }
+    //  app.addEventListener(value,handler);
     }else if(name==JTEXT || name==JHTML){
       renAttribute(returnNode,name,value);
       let expand_value = _jxExpand(jxTryEval(value,data,ex=>hWarn(''+value+':'+ex)));
@@ -60,11 +68,14 @@ function _jxBuild(node, data={}){
   node.childNodes.forEach(child=>returnNode.appendChild(_jxBuild(child,data)))
   return returnNode
 }
-function _diff(n1, n2) {
-  if(n1.nodeType !== n2.nodeType || n1.childNodes.length !== n2.childNodes.length) return true;
-  if(n1.nodeType === 1) return n1.tagName !== n2.tagName || [...n1.attributes].some(attr => n1.getAttribute(attr.name) !== n2.getAttribute(attr.name));
-  return n1.nodeType === 3 && n1.textContent !== n2.textContent;
-}
+//function _diff(n1, n2) {
+//  if(n1.nodeType !== n2.nodeType || n1.childNodes.length !== n2.childNodes.length) return true;
+//  if(n1.nodeType === 1) return n1.tagName !== n2.tagName || [...n1.attributes].some(attr => n1.getAttribute(attr.name) !== n2.getAttribute(attr.name));
+//  return n1.nodeType === 3 && n1.textContent !== n2.textContent;
+//}
+let _diff = (n1, n2) => n1.nodeType !== n2.nodeType || n1.childNodes.length !== n2.childNodes.length ||
+  (n1.nodeType===1&&(n1.tagName!==n2.tagName||[...n1.attributes].some(attr=>n1.getAttribute(attr.name)!==n2.getAttribute(attr.name))))
+  || (n1.nodeType === 3 && n1.textContent !== n2.textContent);
 function _jxUpsert(pn, nn, skipJsTag=false){
   const pca = [...pn.childNodes||[]],nca = [...nn.childNodes||[]],maxLength = Math.max(pca.length, nca.length);
   for(let i=0;i<maxLength;i++){

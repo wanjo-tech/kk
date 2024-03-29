@@ -46,6 +46,7 @@
 thisDate={{thisDate}}
 <div j-html="'<h3>test1 j-html</h3>'"></div>
 <div j-html="'<h3>test2 j-html</h3>'">should-see-this</div>
+<div j-bind="thisDate" ></div>
 </template>
 
 <textarea class="mycss-textarea" id='tplStage' style="min-height:100px" oldstyle="border:1px solid;min-width:640px;min-height:150px" spellcheck="false">
@@ -88,7 +89,7 @@ test j-text:
 <div style='border:1px solid;width:99%;' id='divStage'></div>
 
 <script>
-var {s2bdy,s2frg,frg2s,jxTryEval,jxRender,_jxBuild,_jxUpsert,s2el,s2o,o2s}=jx()
+var {s2bdy,s2frg,frg2s,jxTryEval,jxRender,jxMon,_jxBuild,_jxUpsert,s2el,s2o,o2s}=jx()
 var now = () => new Date().getTime()/1000;
 var gData = {}
 function Build(){
@@ -114,13 +115,35 @@ var t4=now()
   stageDebug.value=JSON.stringify(['compile',t1-t0,'_jxBuild',t2-t1,'2s',t3-t2,'show',t4-t3])
   return built 
 }
+var app;
 function Render(){
 var t0=now()
   //jxUpsert(divStage,Build())
   var data = jxTryEval(`(${stageData.value})`)
   Object.assign(gData,data)
   //jxUpsert(divStage,_jxBuild(s2bdy(tplStage.value),gData))
-  jxRender(divStage,tplStage.value,gData)
+  app=jxMon({...gData,...{
+      eventListeners:{},
+      addEventListener(evtName, handler){
+          console.log('addEventListener', evtName, handler);
+          if (!this.eventListeners[evtName]) { this.eventListeners[evtName] = []; }
+          this.eventListeners[evtName].push(handler);
+      },
+      dispatchEvent(evtName, ...args){
+          console.log('dispatchEvent', evtName, ...args);
+          if (this.eventListeners[evtName]) {
+              this.eventListeners[evtName].forEach(handler => handler(...args));
+          }
+      },
+      }},
+      (prop,val,old)=>{
+    console.log('onChange',{prop,val,old})
+    jxRender(divStage,tplStage.value,app)
+    //TODO 没想好..
+    //if (!prop) jxRender(divStage,tplStage.value,app)
+    //else app.dispatchEvent(prop,{});
+  });
+  //jxRender(divStage,tplStage.value,app)
 var t1=now()
   //stageDebug.textContent+=`=>Render ${t1-t0}`
   stageDebug.value+=`=>Render ${t1-t0}`
