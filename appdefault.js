@@ -82,14 +82,14 @@ var module_exports = async(Application={})=>{
     type:(v)=>typeof(v),
     //_:{},
   }
+
   for (var k of (argo.apis||'test').split(',')){
     console.log('preload api',k);
-    let m = await tryRequire('./api'+k);
     try{
+      let m = await tryRequire('./api'+k,false,console.log);
       if (typeof(m)=='function') m= await m(Application);//DESIGN !
       ctx[k] = m;
     }catch(ex){console.log('err',k,ex)}
-    //ctx._[k] = m;
   }
   var rst = await jevalx(body,ctx);
   if (typeof rst == 'function') rst = await rst()

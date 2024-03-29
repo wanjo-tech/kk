@@ -26,9 +26,9 @@ function myResponse(rt, status = 200, webSocket = null, ext_headers={}) {
   }
   return response;
 }
-var tryRequire = (mmm,fff=false)=>{
+var tryRequire = (mmm,fff=false, hdl=false)=>{
   if(fff){ delete require.cache[require.resolve(mmm)] }
-  return tryx(()=>require(mmm))
+  return tryx(()=>require(mmm),hdl)
 }
 
 //WARNING: for inner ussage only, NEVER try eval in public projectes

@@ -1,7 +1,7 @@
 /*
 
 ## cdp server example
-"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --proxy-server=http://127.0.0.1:7777 --host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1" --test-type --disable-web-security --user-data-dir="%TMP%\%date%" --remote-debugging-port=9222 --remote-allow-origins=* --disable-features=Translate --no-first-run file://%cd%/cdp_backend.html
+"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --proxy-server=http://127.0.0.1:7777 --host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1" --test-type --disable-web-security --user-data-dir="%TMP%\%date%" --remote-debugging-port=9222 --remote-allow-origins=* --disable-features=Translate --no-first-run --auto-open-devtools-for-tabs file://%cd%/cdp_backend.html
 "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --proxy-server=http://127.0.0.1:7777 --host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1" --test-type --disable-web-security --user-data-dir="%TMP%\%date%" --remote-debugging-port=9222 --remote-allow-origins=* --disable-features=Translate --no-first-run https://api.ipify.org
 "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --proxy-server=http://127.0.0.1:7777 --host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1" --test-type --disable-web-security --user-data-dir="%TMP%\%date%" --remote-debugging-port=9222 --remote-allow-origins=* --disable-features=Translate --no-first-run --app=https://api.ipify.org
 
@@ -96,36 +96,68 @@ async function module_exports(opts){
       reject('CONNECT WS TIMEOUT?')
     })
   }
-  if (expression===undefined) {
-    logger('CLOSE',ws.close());
-  }else{
-    if (reload>0 && flg_found) {
-      logger('RELOAD',url)
-      await cdp_call(ws,'Page.navigate',{url})
-      await sleep_async(reload)
-    }
-    //var rst = await cdp_call(ws,'Runtime.evaluate',{expression})
-    var rst = await cdp_call(ws,'Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true})
+
+//'Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true}
+//DOM.getDocument
+//Page.captureScreenshot
+//Performance.enable and Performance.getMetrics, like window.performance.memory
+  var raw = async(...args)=>{
+    var rst = await cdp_call(ws,...args);
     if (rst && rst.result && rst.result.className=='Promise'){
-      logger('!!! Promise',rst.result);//not expecting when using awaitPromise:true ...
-      var {className,description,objectId,subtype} = rst.result
-      rst = await cdp_call(ws,'Runtime.awaitPromise',{promiseObjectId:objectId,returnByValue:true})
+      logger('return Promise? HINT using {awaitPromise:true}',rst.result)
+      throw 'todo strange promise';
     }
     if (rst && rst.result && rst.result.value) return rst.result.value
     if (rst && rst.result && rst.result.className=='string') return rst.result.result.value
     if (rst && rst.result && rst.result.className=='function') {
-      var {className,description,objectId,subtype} = rst.result
-      let result = await cdp_call(ws, 'Runtime.callFunctionOn', {
-          objectId: objectId,
-          functionDeclaration: "function() { return JSON.stringify(this); }",
-          returnByValue: true, // 设置为true以直接在响应中返回值
-          awaitPromise: true  // 如果对象是一个Promise，等待它解决
-      });
-      let jsonString = result.result.value;
-      return JSON.parse(jsonString)
+      console.log('return function? HINT using (...)()')
+      //  var {className,description,objectId,subtype} = rst.result
+      //  let result = await cdp_call(ws, 'Runtime.callFunctionOn', {
+      //      objectId: objectId,
+      //      functionDeclaration: "function() { return JSON.stringify(this); }",
+      //      returnByValue: true, // 设置为true以直接在响应中返回值
+      //      awaitPromise: true  // 如果对象是一个Promise，等待它解决
+      //  });
+      //  let jsonString = result.result.value;
+      //  console.log('debug raw()',jsonString);
+      //  return JSON.parse(jsonString)
     }
-    logger('!!! TODO cdp rst',rst)
-  }
+    return rst;
+  };
+  var exec = async(expression)=>{
+    if (expression===undefined) {
+      logger('CLOSE',ws.close());
+    }else{
+      if (reload>0 && flg_found) {
+        logger('RELOAD',url)
+        await cdp_call(ws,'Page.navigate',{url})
+        await sleep_async(reload)
+      }
+      //var rst = await cdp_call(ws,'Runtime.evaluate',{expression})
+      //var rst = await cdp_call(ws,'Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true})
+      //if (rst && rst.result && rst.result.className=='Promise'){
+      //  logger('!!! Promise',rst.result);//not expecting when using awaitPromise:true ...
+      //  var {className,description,objectId,subtype} = rst.result
+      //  rst = await cdp_call(ws,'Runtime.awaitPromise',{promiseObjectId:objectId,returnByValue:true})
+      //}
+      //if (rst && rst.result && rst.result.value) return rst.result.value
+      //if (rst && rst.result && rst.result.className=='string') return rst.result.result.value
+      //if (rst && rst.result && rst.result.className=='function') {
+      //  var {className,description,objectId,subtype} = rst.result
+      //  let result = await cdp_call(ws, 'Runtime.callFunctionOn', {
+      //      objectId: objectId,
+      //      functionDeclaration: "function() { return JSON.stringify(this); }",
+      //      returnByValue: true, // 设置为true以直接在响应中返回值
+      //      awaitPromise: true  // 如果对象是一个Promise，等待它解决
+      //  });
+      //  let jsonString = result.result.value;
+      //  return JSON.parse(jsonString)
+      //}
+      return await raw('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});
+    }
+  };
+  if (expression) await exec(expression);
+  return ({exec,raw})
 }
 
 export default module_exports
