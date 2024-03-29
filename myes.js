@@ -3,7 +3,8 @@ s2o=(s)=>tryx(()=>JSON.parse(s)),
 o2s=(o)=>JSON.stringify(o),
 tryp=async(f,h=null)=>{try{return(await f())}catch(ex){return(h?h===true?ex:h(ex):null)}};
 
-var argv2o=a=>(a||process.argv||[]).reduce((r,e)=>((m=e.match(/^(\/|--?)([\w-]*)="?(.*)"?$/))&&(r[m[2]]=m[3]),r),{});
+var argv2o=(a,m)=>(a||process.argv||[]).reduce((r,e)=>((m=e.match(/^(\/|--?)([\w-]*)="?(.*)"?$/))&&(r[m[2]]=m[3]),r),{});
+var argo = tryx(argv2o);
 
 var sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
 
@@ -12,19 +13,6 @@ var jeval=(js,ctx)=>jev.bind(ctx)(js);
 
 //for backend:
 var dirtyPause=(i=11)=>(require('child_process').execSync(`"${process.execPath}" -e "setTimeout(()=>true,${i})"`),true);
-
-//long march for vm (https://github.com/patriksimek/vm2/issues/533)
-//test cases:
-//delete process;[].constructor.constructor(`return(Object.keys(this))`)()
-//delete([].constructor.constructor);[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(global.process))")())`)()
-//[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(process))")())`)()
-//delete process;[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(process))")())`)()
-//[].constructor.constructor(`return(this.constructor.constructor("return(typeof(Symbol))")())`)()
-//[].constructor.constructor(`return(this.constructor.constructor('return(this.constructor.constructor("return(typeof(process))")())')())`)()
-var jevalx = (js,ctx,timeout=60000,vm=require('node:vm'))=>{
-  const processWtf=process;process=undefined;const SymbolWtf=Symbol;Symbol=undefined;const ErrorWtf=Error;Error=undefined;
-  return vm.createScript(`eval(${JSON.stringify(js)})`).runInContext(vm.createContext(ctx),{breakOnSigint:true,timeout})
-}
 
 //for cf worker...
 function myResponse(rt, status = 200, webSocket = null, ext_headers={}) {
@@ -42,6 +30,31 @@ var tryRequire = (mmm,fff=false)=>{
   if(fff){ delete require.cache[require.resolve(mmm)] }
   return tryx(()=>require(mmm))
 }
+
+//WARNING: for inner ussage only, NEVER try eval in public projectes
+//long march for vm (https://github.com/patriksimek/vm2/issues/533)
+//test cases:
+//delete process;[].constructor.constructor(`return(Object.keys(this))`)()
+//delete([].constructor.constructor);[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(global.process))")())`)()
+//[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(process))")())`)()
+//delete process;[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(process))")())`)()
+//[].constructor.constructor(`return(this.constructor.constructor("return(typeof(Symbol))")())`)()
+//[].constructor.constructor(`return(this.constructor.constructor('return(this.constructor.constructor("return(typeof(process))")())')())`)()
+//var jevalx = tryRequire('./jevalx');
+//for non-server mode:
+//const processWtf=process,SymbolWtf=Symbol,ErrorWtf=Error,requireWtf=require;process=undefined;Symbol=undefined;Error=undefined;require=undefined;
+//process=processWtf;Symbol=SymbolWtf;Error=ErrorWtf;require=requireWtf;
+var jevalx = (js,ctx,timeout=60000,vm=require('node:vm'))=>{
+  const processWtf=process,SymbolWtf=Symbol,ErrorWtf=Error,requireWtf=require;process=undefined;Symbol=undefined;Error=undefined;require=undefined;
+  try{
+    js='process=undefined;Symbol=undefined;Error=undefined;require=undefined;'+js
+    return vm.createScript(`eval(${JSON.stringify(js)})`).runInContext(vm.createContext(ctx),{breakOnSigint:true,timeout})
+  }catch(ex){ throw ex }
+  finally{
+    process=processWtf;Symbol=SymbolWtf;Error=ErrorWtf;require=requireWtf;
+  }
+};
+
 var http = tryRequire('http')
 var https = tryRequire('https')
 var zlib = tryRequire('zlib')
@@ -155,7 +168,7 @@ var system = async(command, encoding='utf-8', chcp='65001')=>{
 var safe = str=>(""+str).replace(/[^0-9a-z_\.\*]+/gi, '');
 var qstr = str=>`'${safe(str)}'`;
 
-var myes={argv2o,tryx,s2o,o2s,myResponse,tryp,myfetch,http,https,urlModule,sleep_async,
+var myes={argv2o,argo,tryx,s2o,o2s,myResponse,tryp,myfetch,http,https,urlModule,sleep_async,
 fs,nothing,date,now,get_time_iso,get_timestamp,get_time_YmdHMS,tryRequire,zlib,gzip2s,jPath,jPathAsync,system,jev,jeval,jevalx,safe,qstr,dirtyPause,
   //@ref https://cnodejs.org/topic/504061d7fef591855112bab5
   md5: (s) => require('crypto').createHash('md5').update(s).digest('hex'),

@@ -4,8 +4,7 @@
 //node server /app=default /port=8000 /fwd=1
 //node server /app=default /port=8001 /static_local=../docs /static=static/
 
-const { argv2o, tryx, s2o, o2s, tryp, myfetch, http, urlModule, gzip2s, fs} = require('./myes')
-const argo = argv2o();
+const { argv2o, argo, tryx, s2o, o2s, tryp, myfetch, http, urlModule, gzip2s, fs} = require('./myes')
 const isValidUrl = (s)=>s && (s.startsWith('https:')||s.startsWith('http:'));
 const mimeTypes = {
   '.html': 'text/html',
@@ -39,7 +38,7 @@ const server = http.createServer(async(req, res) => {
       const dkkHost = reqHeaders['dkkhost'];
       url = dkkHost ? `https://${dkkHost}${req.url}` : req.url.substring(1);
 
-      Application = {fastReturn};
+      let Application = {fastReturn};
       Application.tryStaticFile = (relativePath)=>{
         let rt;
         var static = argo.static || '';
@@ -91,9 +90,8 @@ const server = http.createServer(async(req, res) => {
       }
       if (!isValidUrl(url)){
         if (!body) body = decodeURI(urlModule.parse(url).query||'')
-        var app_id = (argo.app||'default')
-        app = require('./app'+app_id)
-        return await app({...Application,...{req,res, url,body,argo,app_id,reqHOST,reqPORT}})
+        var app_id = (argo.app||'default');
+        return await require('./app'+app_id)({...Application,...{req,res, url,body,argo,app_id,reqHOST,reqPORT}})
       }
       //////////////////// fwd 
       if (!argo.fwd) throw 'fwd'

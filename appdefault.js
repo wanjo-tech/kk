@@ -41,7 +41,7 @@ var module_exports = async(Application={})=>{
   var {req,res,url,body,argo,app_id,reqHOST,reqPORT}=Application;
 
   //SECURITY VULNERABLE ;)
-  var reload = (m='app'+app_id,clear=true)=>{var mm = tryRequire('./'+m,clear); return (mm&&mm.init_time)?mm.init_time:typeof(mm)};
+  var reload = (x='app'+app_id,clear=true)=>{var mm = tryRequire('./'+x,clear); return (mm&&mm.init_time)?mm.init_time:typeof(mm)};
 
   const reqHeaders = req.headers;
   const acceptEncoding = reqHeaders['accept-encoding'];
@@ -84,7 +84,7 @@ var module_exports = async(Application={})=>{
   }
   for (var k of (argo.apis||'test').split(',')){
     console.log('preload api',k);
-    var m = await tryRequire('./api'+k);
+    let m = await tryRequire('./api'+k);
     try{
       if (typeof(m)=='function') m= await m(Application);//DESIGN !
       ctx[k] = m;

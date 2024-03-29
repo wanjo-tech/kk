@@ -25,9 +25,9 @@ var cdp_call = (ws,method,params)=>new Promise((resolve,reject)=>{
 
 const sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
 async function module_exports(opts){
-  var {WebSocketClass,pattern, init, url, expression, port, host, debug=false, reload=0} = opts || {}
+  var {WebSocket,pattern, init, url, expression, port, host, debug=false, reload=0} = opts || {}
   // NOTE: pattern is also key.
-  if (!WebSocketClass) throw 'need WebSocketClass'
+  if (!WebSocket) throw 'need WebSocket'
   if (!port) port=9222
   if (!host) host='127.0.0.1'
   if (!pattern) throw 'need pattern'
@@ -62,7 +62,7 @@ async function module_exports(opts){
 
   var ws = ws_o[ pattern ]
   //logger('typeof ws',typeof ws, 'readyState',(ws?ws.readyState:null))
-  if(ws && ws.readyState==WebSocketClass.OPEN){
+  if(ws && ws.readyState==WebSocket.OPEN){
     logger('OK ws', pattern)
   }else{
     if (ws) {
@@ -73,7 +73,7 @@ async function module_exports(opts){
     }
     logger('INIT ws', pattern)
     ws = await new Promise(async(resolve,reject)=>{
-      let rt = ws_o[ pattern ] = new WebSocketClass(webSocketDebuggerUrl)
+      let rt = ws_o[ pattern ] = new WebSocket(webSocketDebuggerUrl)
       rt.onmessage = (evt) =>{
           const response = JSON.parse(evt.data);
           var {id,result,error} = response

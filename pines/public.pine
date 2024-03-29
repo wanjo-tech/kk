@@ -2,14 +2,6 @@
 //@description Public Lib by wanjo-tech
 library("public")
 
-//usage example:
-//SP2PVTA(string sym,string period)=>request.security(sym,period,[close,volume,time/1000, close*volume])
-// symbol0 = syminfo.tickerid
-// [prz0a_d,vol0a_d,time0a_d,amt0a_d] = SP2PVTA(symbol0,'D')
-// [prz0a_15m,vol0a_15m,time0a_15m,amt0a_15m] = SP2PVTA(symbol0,'15')
-//[vlt20d_,lnr20d_] = calcMainStd(24*20,prz0a_d,vol0a_d,time0a_d,amt0a_d)
-//plot(bs365*vlt20d_,color=color.red)
-
 var int timealigned_imax = 4999
 export TimeAligned(int hr, series float prz_a, series float vol_a, series float time_a, series float amt_a) =>
     float[] vlta = array.new_float() //for Std LogDiff
@@ -56,3 +48,16 @@ export StdTimeAligned(int hr, series float prz_a, series float vol_a, series flo
 
 math_log_2 = math.log(2)
 export lg2(float x) => math.log(x) / math_log_2
+
+///////
+//usage example:
+bs365=100*math.sqrt(365)
+SP2PVTA(string sym,string period)=>request.security(sym,period,[close,volume,time/1000, close*volume])
+symbol0 = syminfo.tickerid
+// [prz0a_d,vol0a_d,time0a_d,amt0a_d] = SP2PVTA(symbol0,'D')
+// [vlt20d_,lnr20d_] = StdTimeAligned(24*20,prz0a_d,vol0a_d,time0a_d,amt0a_d)
+// plot(bs365*vlt20d_,color=color.red)
+[prz0a_15m,vol0a_15m,time0a_15m,amt0a_15m] = SP2PVTA(symbol0,'15')
+[vlt20d,lnr20d] = StdTimeAligned(24*20,prz0a_15m,vol0a_15m,time0a_15m,amt0a_15m)
+plot(bs365*vlt20d,color=color.blue)
+
