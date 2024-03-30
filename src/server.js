@@ -71,12 +71,12 @@ const server = http.createServer(async(req, res) => {
         return rt;
       };
       if ( (argo.static || argo.static_local) && (req.method == 'GET')) {
-        var data = Application.tryStaticFile(req.url);
+        data = Application.tryStaticFile(req.url);
         if (data) return fastReturn({statusCode,headers,data});
       }
       if (req.method === 'POST') {
         body = await new Promise((resolve, reject) => {
-          var data = '';
+          data = '';
           req.on('data', (chunk) => data += chunk);
           req.on('end', () => resolve(data));
           req.on('error', (error) => reject(error));
@@ -104,9 +104,10 @@ const server = http.createServer(async(req, res) => {
       if (argo.proxy) {
         agent = new (require('https-proxy-agent').HttpsProxyAgent)(urlModule.parse(argo.proxy))
       }
-      var { data, headers, statusCode, options } = await myfetch(url, {
+      var { data:dataFetched, headers, statusCode, options } = await myfetch(url, {
           method: req.method, headers: reqHeaders, body, agent
       });
+      data = dataFetched;
       let location = headers['location']
       if (location) {
           headers['location'] = isValidUrl(location)?`/${location}`:`.${location}`;
@@ -126,11 +127,11 @@ const server = http.createServer(async(req, res) => {
         console.error('ERR',url,statusCode,headers,'=>',error);
         const msg = (''+error).split('\n')[0]; // Get the first line only
         const code = (error||{}).code
-        var data = o2s({msg,code})
+        data = o2s({msg,code})
     }
     if (hasGzip && data) {
         headers['Content-Encoding']='gzip';
-        var data = await gzip2s(data)
+        data = await gzip2s(data)
     }
     return fastReturn({statusCode,headers,data})
 });

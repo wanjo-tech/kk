@@ -47,17 +47,17 @@ let module_exports = async(Application={})=>{
   const acceptEncoding = reqHeaders['accept-encoding'];
   const hasGzip = acceptEncoding && acceptEncoding.includes('gzip');
 
-  let headers = {
+  var headers = {
     //'Content-Type':'application/json;charset=utf-8',
     "Access-Control-Allow-Origin":"*",
     "Access-Control-Allow-Methods":"POST, OPTIONS, GET, DELETE",
     "Access-Control-Allow-Headers":"*",
   }
-
+  var data=null;//TODO let..
   let statusCode = '200';
   if (!url || url.startsWith('?')){
     headers['Content-Type']='text/html;charset=utf-8';
-    let data = Application.tryStaticFile(`${reqHOST}_${reqPORT}.htm`);//try this first
+    data = Application.tryStaticFile(`${reqHOST}_${reqPORT}.htm`);//try this first
     if (data) return Application.fastReturn({statusCode,headers,data});
 
     let fwd_url = `${argo.static||''}index.html`;//back to index.html by default then
@@ -83,10 +83,10 @@ let module_exports = async(Application={})=>{
     //_:{},
   }
 
-  for (let k of (argo.apis||'test').split(',')){
-    console.log('preload api',k);
+  for (let k of (argo.apis||'math').split(',')){
+    //console.log('preload api',k);
     try{
-      let m = await tryRequire('./api'+k,false,console.log);
+      let m = await tryRequire('./api'+k);
       if (typeof(m)=='function') m= await m(Application);//DESIGN !
       ctx[k] = m;
     }catch(ex){console.log('err',k,ex)}
@@ -100,7 +100,7 @@ let module_exports = async(Application={})=>{
     rst = ''+ex
   }
   if (typeof rst == 'function') rst = await rst()
-  let data = rst || {};
+  data = rst || {};
   if (typeof rst != 'string') {
     data = o2s(rst)
     headers['Content-Type'] = 'application/json;charset=utf-8';
