@@ -10,5 +10,6 @@ start "KKBACK" "%ProgramFiles%\Google\Chrome\Application\chrome.exe" --proxy-ser
 start "KKFRONT" "%ProgramFiles%\Google\Chrome\Application\chrome.exe" --proxy-server="%PXSVR%" --host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1" --test-type --disable-web-security --user-data-dir="%TMP%\kkfront" --remote-allow-origins=* --disable-features=Translate --no-first-run -app=file://%cd%/cdp_kk.html
 
 :st
-node server.js /app=kk /port=17777 /proxy=%PXSVR% %*
+@rem node server.js /app=default /port=17777 /proxy=%PXSVR% %*
+node server.js /app=default /port=17777  /static_local=../docs /apis=math,news %*
 goto st
