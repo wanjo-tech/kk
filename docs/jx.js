@@ -1,9 +1,9 @@
 var jx = (tbx=window.document,__='j-')=>{const VER=240324.3,DOC='kk.datakk.com',
 JIF=__+'if',JELSE=__+'else',JFOR=__+'for',JTEXT=__+'text',JHTML=__+'html',JWARN=__+'warn',JBIND=__+'bind',
 tryx=(f,h)=>{try{return f()}catch(ex){return h?h===true?ex:h(ex):h}},
-jev=function(){with(arguments[1]||this)return eval(arguments[0])},
-jxEval=(js,ctx,that)=>jev.bind(that||ctx)(js,ctx),
-jxTryEval=(txt,ctx,h,that)=>tryx(()=>jxEval(txt,ctx,that),h),
+jev=function(){with(arguments[1]||this)return eval('const globalThis=undefined;'+arguments[0])},
+jeval=(js,ctx,that)=>jev.bind(that||ctx)(js,ctx),
+jxTryEval=(txt,ctx,h,that)=>tryx(()=>jeval(txt,ctx,that),h),
 s2o=(s,h)=>jxTryEval(`(${s})`,h),
 o2s=(o,h)=>tryx(()=>JSON.stringify(o),h),
 s2frg=(s)=>(s?tbx.createRange().createContextualFragment(s):tbx.createDocumentFragment()),
@@ -102,5 +102,5 @@ function jxMon(data,onAfterChange){
   });
 }
 let jxRender=(tgt,src,data)=>_jxUpsert(tgt=frg4s(tgt),_jxBuild(src=frg4s(src),data));
-return {VER,DOC,jxMon,jxRender,jxEval,jxTryEval,_jxBuild,_jxUpsert,tryx,s2o,o2s,s2bdy,s2el,s2ela,s2frg,frg2s,frg4s}
+return {VER,DOC,jxMon,jxRender,jxTryEval,_jxBuild,_jxUpsert,tryx,s2o,o2s,s2bdy,s2el,s2ela,s2frg,frg2s,frg4s,jev,jeval}
 }
