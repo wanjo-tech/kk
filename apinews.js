@@ -3,8 +3,8 @@ var init_time = now()
 const argo = argv2o();
 
 var User_Agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.20 Safari/537.36'
-var web_entry = 'https://cn.invest'+'ing.com'
-var api_entry = 'https://api.invest'+'ing.com'
+var web_entry = ['https://cn.invest',/*${process.exit}*/,'ing.com'].join('');
+var api_entry = ['https://api.invest',/*${process.exit}*/,'ing.com'].join('');
 
 ///instruments/HistoricalDataAjax
 //{

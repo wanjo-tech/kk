@@ -8,8 +8,8 @@ var argo = tryx(argv2o);
 
 var sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
 
-var jev=function(){with(this)return eval(arguments[0])};
-var jeval=(js,ctx)=>jev.bind(ctx)(js);
+var jev=function(){with(arguments[1]||this)return eval('const globalThis=undefined;'+arguments[0])},
+jeval=(js,ctx,that)=>jev.bind(that||ctx)(js,ctx);
 
 //for backend:
 var dirtyPause=(i=11)=>(require('child_process').execSync(`"${process.execPath}" -e "setTimeout(()=>true,${i})"`),true);
@@ -31,7 +31,7 @@ var tryRequire = (mmm,fff=false, hdl=false)=>{
   return tryx(()=>require(mmm),hdl)
 }
 
-//WARNING: for inner ussage only, NEVER try eval in public projectes
+//WARNING!!! for inner ussage only, NEVER try in public projectes
 //long march for vm (https://github.com/patriksimek/vm2/issues/533)
 //test cases:
 //delete process;[].constructor.constructor(`return(Object.keys(this))`)()
@@ -40,19 +40,11 @@ var tryRequire = (mmm,fff=false, hdl=false)=>{
 //delete process;[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(process))")())`)()
 //[].constructor.constructor(`return(this.constructor.constructor("return(typeof(Symbol))")())`)()
 //[].constructor.constructor(`return(this.constructor.constructor('return(this.constructor.constructor("return(typeof(process))")())')())`)()
-//var jevalx = tryRequire('./jevalx');
-//for non-server mode:
-//const processWtf=process,SymbolWtf=Symbol,ErrorWtf=Error,requireWtf=require;process=undefined;Symbol=undefined;Error=undefined;require=undefined;
-//process=processWtf;Symbol=SymbolWtf;Error=ErrorWtf;require=requireWtf;
-var jevalx = (js,ctx,timeout=60000,vm=require('node:vm'))=>{
-  const processWtf=process,SymbolWtf=Symbol,ErrorWtf=Error,requireWtf=require;process=undefined;Symbol=undefined;Error=undefined;require=undefined;
-  try{
-    js='process=undefined;Symbol=undefined;Error=undefined;require=undefined;'+js
-    return vm.createScript(`eval(${JSON.stringify(js)})`).runInContext(vm.createContext(ctx),{breakOnSigint:true,timeout})
-  }catch(ex){ throw ex }
-  finally{
-    process=processWtf;Symbol=SymbolWtf;Error=ErrorWtf;require=requireWtf;
-  }
+//Object.values(this.constructor.constructor(`return(Object.keys(this))`)())
+var jevalx = async(js,ctx,timeout=60000,More=['process','Symbol','Error','eval','require'],vm=require('node:vm'),Wtf={})=>{
+  for(let k of[...Object.keys(globalThis),...More]){Wtf[k]=globalThis[k];delete globalThis[k]}
+  try{return await vm.createScript(js).runInContext(vm.createContext(ctx||{}),{breakOnSigint:true,timeout})}
+  catch(ex){throw ex}finally{for(var k in Wtf){globalThis[k]=Wtf[k]};}
 };
 
 var http = tryRequire('http')
