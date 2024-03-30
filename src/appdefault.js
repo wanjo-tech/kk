@@ -2,6 +2,7 @@ let {o2s,s2o,tryx,tryp,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath
 get_timestamp,get_time_iso,get_time_YmdHMS,
 } = require('../docs/myes')
 let init_time = now()
+let mydirname = require('path').dirname(__filename);//__dirname
 let myfilename = ()=>require('path').basename(__filename);
 let myfiletime= ()=>fs.statSync(__filename).mtime;
 
@@ -41,7 +42,7 @@ let module_exports = async(Application={})=>{
   let {req,res,url,body,argo,app_id,reqHOST,reqPORT}=Application;
 
   //SECURITY VULNERABLE ;)
-  let reload = (x='app'+app_id,clear=true)=>{let mm = tryRequire('./'+x,clear); return (mm&&mm.init_time)?mm.init_time:typeof(mm)};
+  let reload = (x='app'+app_id,clear=true)=>{let mm = tryRequire('../src/'+x,clear); return (mm&&mm.init_time)?mm.init_time:typeof(mm)};
 
   const reqHeaders = req.headers;
   const acceptEncoding = reqHeaders['accept-encoding'];
@@ -78,6 +79,7 @@ let module_exports = async(Application={})=>{
     //quick tools:
     md5,md5_ascii,o2s,s2o,a2csv,a2tbl,init_time,now,safe,qstr,get_time_iso,get_time_YmdHMS,get_timestamp,reload,
     $:jPathAsync,//e.g. $(news.history_o(945629),'data'),
+    //mydirname,
     //app_id,myfilename,myfiletime,argo,
     type:(v)=>typeof(v),
     //_:{},
@@ -86,7 +88,7 @@ let module_exports = async(Application={})=>{
   for (let k of (argo.apis||'math').split(',')){
     //console.log('preload api',k);
     try{
-      let m = await tryRequire('./api'+k);
+      let m = await tryRequire('../src/api'+k,false,console.log);
       if (typeof(m)=='function') m= await m(Application);//DESIGN !
       ctx[k] = m;
     }catch(ex){console.log('err',k,ex)}
