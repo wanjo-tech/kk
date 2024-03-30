@@ -9,25 +9,16 @@
 var MathX = Object.create(Math);
 
 MathX.Tensor = function({ndim=0, data=0} = {}) {
-  if (!(this instanceof MathX.Tensor)) {
-    // 当不是通过 new 调用时，使用递归调用并传递正确的参数形式
-    return new MathX.Tensor({ndim, data});
-  }
+  if (!(this instanceof MathX.Tensor)) { return new MathX.Tensor({ndim, data}); }
   this.ndim = ndim;
   this.data = (ndim === 0) ? data : (Array.isArray(data) ? data : []);
 };
 
 MathX.Tensor.prototype.abs = function() {
   if (this.ndim === 0) {
-    return new MathX.Tensor({
-      ndim: 0, 
-      data: Math.abs(this.data)
-    });
+    return new MathX.Tensor({ ndim: 0, data: Math.abs(this.data) });
   } else {
-    return new MathX.Tensor({
-      ndim: this.ndim, 
-      data: this.data.map(Math.abs)
-    });
+    return new MathX.Tensor({ ndim: this.ndim, data: this.data.map(Math.abs) });
   }
 };
 
