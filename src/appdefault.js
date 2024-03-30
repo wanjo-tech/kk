@@ -1,6 +1,6 @@
 let {o2s,s2o,tryx,tryp,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync,urlModule,safe,qstr,jevalx,
 get_timestamp,get_time_iso,get_time_YmdHMS,
-} = require('./myes')
+} = require('../docs/myes')
 let init_time = now()
 let myfilename = ()=>require('path').basename(__filename);
 let myfiletime= ()=>fs.statSync(__filename).mtime;

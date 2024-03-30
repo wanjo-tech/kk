@@ -4,7 +4,7 @@
 //node server /app=default /port=8000 /fwd=1
 //node server /app=default /port=8001 /static_local=../docs /static=static/
 
-const { argv2o, argo, tryx, s2o, o2s, tryp, myfetch, http, urlModule, gzip2s, fs} = require('./myes')
+const { argv2o, argo, tryx, s2o, o2s, tryp, myfetch, http, urlModule, gzip2s, fs} = require('../docs/myes')
 const isValidUrl = (s)=>s && (s.startsWith('https:')||s.startsWith('http:'));
 const mimeTypes = {
   '.html': 'text/html',
