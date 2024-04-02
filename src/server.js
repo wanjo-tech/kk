@@ -15,9 +15,20 @@ const mimeTypes = {
   '.jpg': 'image/jpeg',
   '.ico': 'image/png',//TMP
 };
+process.on('SIGTERM', () => {
+  console.log('SIGTERM')
+})
+
 process.on('unhandledRejection', (reason, promise) => {
   console.error('WARNING unhandledRejection', promise, 'reason:', reason);
 });
+
+//process.on('SIGINT', () => { console.log('SIGINT') process.exit() });
+
+//process.on('uncaughtException', (error) => {
+//  console.log('Uncaught exception:', error);
+//});
+
 const server = http.createServer(async(req, res) => {
     var headers = {
       'Content-Type':'application/json;charset=utf-8',

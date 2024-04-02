@@ -1,6 +1,7 @@
-function hideUsername(mutationsList, observer) {
+function hideUsername(mutationsList, observer){
+
   document.querySelectorAll('span.css-1qaijid.r-bcqeeo.r-qvutc0.r-poiln3').forEach(n=>{if(n.innerText.trim()[0]=='@')n.style.display='none'});
-  console.warn('YES',new Date());
+
 }
 
 const observer = new MutationObserver(hideUsername);

@@ -32,22 +32,6 @@ var tryRequire = (mmm,fff=false,hdl=false)=>{
   return tryx(()=>require(mmm),hdl)
 }
 
-//WARNING!!! for inner ussage only, NEVER try in public projectes
-//long march for vm (https://github.com/patriksimek/vm2/issues/533)
-//test cases:
-//delete process;[].constructor.constructor(`return(Object.keys(this))`)()
-//delete([].constructor.constructor);[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(global.process))")())`)()
-//[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(process))")())`)()
-//delete process;[].constructor.constructor(`return(this.constructor.constructor("return(Object.keys(process))")())`)()
-//[].constructor.constructor(`return(this.constructor.constructor("return(typeof(Symbol))")())`)()
-//[].constructor.constructor(`return(this.constructor.constructor('return(this.constructor.constructor("return(typeof(process))")())')())`)()
-//Object.values(this.constructor.constructor(`return(Object.keys(this))`)())
-var jevalx = async(js,ctx,timeout=60000,More=['process','Symbol','Error','eval','require'],vm=require('node:vm'),Wtf={})=>{
-  for(let k of[...Object.keys(globalThis),...More]){Wtf[k]=globalThis[k];delete globalThis[k]}
-  try{return await vm.createScript(js).runInContext(vm.createContext(ctx||{}),{breakOnSigint:true,timeout})}
-  catch(ex){throw ex}finally{for(var k in Wtf){globalThis[k]=Wtf[k]};}
-};
-
 var http = tryRequire('http')
 var https = tryRequire('https')
 var zlib = tryRequire('zlib')
@@ -162,7 +146,7 @@ var safe = str=>(""+str).replace(/[^0-9a-z_\.\*]+/gi, '');
 var qstr = str=>`'${safe(str)}'`;
 
 var myes={argv2o,argo,tryx,s2o,o2s,myResponse,tryp,myfetch,http,https,urlModule,sleep_async,
-fs,nothing,date,now,get_time_iso,get_timestamp,get_time_YmdHMS,tryRequire,zlib,gzip2s,jPath,jPathAsync,system,jev,jeval,jevalx,safe,qstr,dirtyPause,tryImport,
+fs,nothing,date,now,get_time_iso,get_timestamp,get_time_YmdHMS,tryRequire,zlib,gzip2s,jPath,jPathAsync,system,jev,jeval,safe,qstr,dirtyPause,tryImport,
   //@ref https://cnodejs.org/topic/504061d7fef591855112bab5
   md5: (s) => require('crypto').createHash('md5').update(s).digest('hex'),
   md5_ascii : function(){for(var m=[],l=0;64>l;)m[l]=0|4294967296*Math.abs(Math.sin(++l));return function(c){var e,g,f,a,h=[];c=unescape(encodeURI(c));for(var b=c.length,k=[e=1732584193,g=-271733879,~e,~g],d=0;d<=b;)h[d>>2]|=(c.charCodeAt(d)||128)<<8*(d++%4);h[c=16*(b+8>>6)+14]=8*b;for(d=0;d<c;d+=16){b=k;for(a=0;64>a;)b=[f=b[3],(e=b[1]|0)+((f=b[0]+[e&(g=b[2])|~e&f,f&e|~f&g,e^g^f,g^(e|~f)][b=a>>4]+(m[a]+(h[[a,5*a+1,3*a+5,7*a][b]%16+d]|0)))<<(b=[7,12,17,22,5,9,14,20,4,11,16,23,6,10,15,21][4*b+a++%4])|f>>>32-b),e,g];for(a=4;a;)k[--a]=k[a]+b[a]}for(c="";32>a;)c+=(k[a>>3]>>4*(1^a++&7)&15).toString(16);return c}}(),

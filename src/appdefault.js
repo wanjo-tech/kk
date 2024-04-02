@@ -1,6 +1,6 @@
-let {o2s,s2o,tryx,tryp,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync,urlModule,safe,qstr,jevalx,
-get_timestamp,get_time_iso,get_time_YmdHMS,
+let {o2s,s2o,tryx,tryp,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync,urlModule,safe,qstr,get_timestamp,get_time_iso,get_time_YmdHMS,
 } = require('../docs/myes')
+let {jevalx} = require('./jevalx')
 let init_time = now()
 let mydirname = require('path').dirname(__filename);//__dirname
 let myfilename = ()=>require('path').basename(__filename);
@@ -95,12 +95,12 @@ let module_exports = async(Application={})=>{
   }
   console.log('body=>',body);
   let rst;
-  try{
+  //try{
     rst = await jevalx(body,ctx);
     if (typeof rst=='undefined') rst = null;
-  }catch(ex){
-    rst = ''+ex
-  }
+  //}catch(ex){
+  //  rst = ''+ex
+  //}
   if (typeof rst == 'function') rst = await rst()
   data = rst || {};
   if (typeof rst != 'string') {

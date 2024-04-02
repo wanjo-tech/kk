@@ -69,4 +69,11 @@ HIST:
   data_a = await LOOPDATA(conn,timeout=15) //timeout or "series_completed" met
   return data
 
+
+FUTURE
+
+convert pine scripts to js/py script
+vectoring!
+
+
 */
