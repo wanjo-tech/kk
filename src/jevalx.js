@@ -3,12 +3,12 @@ const setTimeoutWtf=setTimeout;
 const PromiseWtf=Promise;
 const Object_keys = Object.keys;
 const Object_getPrototypeOf = Object.getPrototypeOf;
-function findThenGetter(obj,deep=3) {
+function findEvilGetter(obj,deep=3) {
   let currentObj = obj;
   let i=0;
   while (currentObj !== null) {
-    if (i>3) return true;//break if too deep.
-    //console.log(i++);
+    if (i>2) return true;//assure found if too deep
+    //console.log(i++, currentObj);
     const descriptor = Object.getOwnPropertyDescriptor(currentObj, 'then');
     if (descriptor && typeof descriptor.get === 'function') {
       return descriptor.get; // Stop if the 'then' getter is found
@@ -33,15 +33,14 @@ var jevalx_core = async(js,ctx,timeout=60000,timeout_race=666,vm=require('node:v
     //delete Object.prototype.__proto__;//
     await new PromiseWtf(async(r,j)=>{
       try{
-        rst = vm.createScript(prejs_delete+'\n'
-          +js,{importModuleDynamically(specifier, referrer, importAttributes){
-            evil=true; err = {message:'EvilImport',js};
-            globalThis['process'] = undefined;//very important! NOT delete..
+        rst = vm.createScript(prejs_delete+'\n'+js,{importModuleDynamically(specifier, referrer, importAttributes){
+          evil=true; err = {message:'EvilImport',js};
+          globalThis['process'] = undefined;//very important! NOT delete..
         }}).runInContext(vm.createContext(ctx||{}),{breakOnSigint:true,timeout});
         for (var i=0;i<9;i++) {
           if (evil || !rst || err) break;
-          let getter = findThenGetter(rst);
-          if (getter) { throw {message:'EvilProto',js} }
+          let found = findEvilGetter(rst);
+          if (found) { throw {message:'EvilProto',js} }
           if ('function'==typeof rst) {
             rst = rst();
           }else if (rst.then){
@@ -55,6 +54,7 @@ var jevalx_core = async(js,ctx,timeout=60000,timeout_race=666,vm=require('node:v
             }else throw {message:'EvilPromise',js}
           } else break;
         }
+        if (findEvilGetter(rst)) { throw {message:'EvilProto',js} }
         if (rst && rst.then) throw {message:'EvilPromiseX',js};
         if ('function'==typeof rst) throw {message:'EvilFunction',js};
         if(rst==globalThis) throw {message:'EvilGlobal',js};
