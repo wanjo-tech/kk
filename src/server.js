@@ -25,9 +25,13 @@ process.on('unhandledRejection', (reason, promise) => {
 
 //process.on('SIGINT', () => { console.log('SIGINT') process.exit() });
 
-//process.on('uncaughtException', (error) => {
-//  console.log('Uncaught exception:', error);
-//});
+process.on('uncaughtException', (error) => {
+  console.log('Uncaught exception:', error);
+});
+
+process.on('uncaughtException', (error) => {
+  console.log('Uncaught exception:', error);
+});
 
 const server = http.createServer(async(req, res) => {
     var headers = {
