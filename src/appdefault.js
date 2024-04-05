@@ -1,6 +1,6 @@
 let {o2s,s2o,tryx,tryp,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync,urlModule,safe,qstr,get_timestamp,get_time_iso,get_time_YmdHMS,
 } = require('../docs/myes')
-let {jevalx,jevalx_core} = require('./jevalx')
+let {jevalx} = require('./jevalx')
 let init_time = now()
 let mydirname = require('path').dirname(__filename);//__dirname
 let myfilename = ()=>require('path').basename(__filename);
@@ -96,12 +96,16 @@ let module_exports = async(Application={})=>{
   console.log('body=>',body);
   let rst;
   try{
-    rst = await jevalx_core(body,ctx,timeout=2999);
+    rst = await jevalx(body,ctx,timeout=2999);
     if (typeof rst=='undefined') rst = null;
   }catch(ex){
+let message = ex?.message || '';
+let code = ex?.code || '';
+//ERR_SCRIPT_EXECUTION_TIMEOUT
+if (code=='ERR_SCRIPT_EXECUTION_TIMEOUT' || message.startsWith('Script execution timed out')) message = 'Timeout'
     //TODO WRITE LOG....
     console.log(ex);
-    rst = (ex&&ex.message) ? {message:ex.message} : {message:String(ex)}
+    rst = {message,code}
   }
   //if (typeof rst == 'function') rst = await rst()
   data = rst || {};
