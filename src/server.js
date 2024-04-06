@@ -4,6 +4,13 @@
 //node server /app=default /port=8000 /fwd=1
 //node server /app=default /port=8001 /static_local=../docs /static=static/
 
+const globalThisWtf = {};
+for(let k of Object.keys(globalThis)){
+  console.log(k)
+  globalThisWtf[k] = globalThis[k];
+  delete globalThisWtf;
+}
+
 const { argv2o, argo, tryx, s2o, o2s, tryp, myfetch, http, urlModule, gzip2s, fs} = require('../docs/myes')
 const isValidUrl = (s)=>s && (s.startsWith('https:')||s.startsWith('http:'));
 const mimeTypes = {
@@ -111,7 +118,7 @@ const server = http.createServer(async(req, res) => {
       if (!isValidUrl(url)){
         if (!body) body = decodeURI(urlModule.parse(url).query||'')
         let app_id = (argo.app||'default');
-        return await require('./app'+app_id)({...Application,...{req,res, url,body,argo,app_id,reqHOST,reqPORT}})
+        return await require('./app'+app_id)({...Application,...{req,res, url,body,argo,app_id,reqHOST,reqPORT,globalThisWtf}})
       }
       //////////////////// fwd 
       if (!argo.fwd) throw 'fwd'

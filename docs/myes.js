@@ -3,7 +3,7 @@ s2o=(s)=>tryx(()=>JSON.parse(s)),
 o2s=(o)=>JSON.stringify(o),
 tryp=async(f,h=null)=>{try{return(await f())}catch(ex){return(h?h===true?ex:h(ex):null)}};
 
-var argv2o=(a,m)=>(a||process.argv||[]).reduce((r,e)=>((m=e.match(/^(\/|--?)([\w-]*)="?(.*)"?$/))&&(r[m[2]]=m[3]),r),{});
+var argv2o=(a,m)=>(a||require('process').argv||[]).reduce((r,e)=>((m=e.match(/^(\/|--?)([\w-]*)="?(.*)"?$/))&&(r[m[2]]=m[3]),r),{});
 var argo = tryx(argv2o);
 
 var sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
@@ -131,7 +131,7 @@ var jPathAsync = async(obj,path,val)=>jPath((obj instanceof Promise)?(await obj)
 
 var system = async(command, encoding='utf-8', chcp='65001')=>{
   var { exec } = require('child_process');
-  var isWindows = process.platform === 'win32';
+  var isWindows = require('process').platform === 'win32';
   var fullCommand = isWindows ? `chcp 65001 >nul && ${command}` : command;
   var shell = isWindows ? 'cmd.exe' : '/bin/sh';
   return new Promise((resolve, reject) => exec(
