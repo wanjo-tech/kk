@@ -1,11 +1,6 @@
 const vm = require('node:vm');
 const console_log = console.log;
 
-//const Object_keys = Object.keys;
-//const Object_getOwnPropertySymbols = Object.getOwnPropertySymbols;
-//const Object_defineProperty = Object.defineProperty;
-//const Object_defineProperties = Object.defineProperties;
-
 const Object_getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const Object_getPrototypeOf = Object.getPrototypeOf;
 const Object_assign = Object.assign;
@@ -27,19 +22,19 @@ let jevalx_raw = (js,ctxx,timeout=666,js_opts)=>[ctxx,vm.createScript(js,js_opts
 
 const sFunction="(...args)=>eval(`(${args.slice(0,-1).join(',')})=>{${args[args.length-1]}}`)";
 
-const jevalx_setup = (js,ctx,timeout=666,js_opts)=>{
+const jevalx_ext = (js,ctx,timeout=666,js_opts)=>{
   let rst,ctxx;
   if (!vm.isContext(ctx||{})) {
-    ctxx = vm.createContext( (()=>{ return new(function Object(){}); })());
-    [ctxx,rst] = jevalx_raw(`delete eval;delete Function;delete Reflect;delete Proxy;delete Symbol;`,ctxx);
-    if (ctx) Object_assign(ctxx,ctx);
-    ctxx.eval=(js)=>jevalx_raw(js,ctxx,timeout)[1];
+    ctxx = vm.createContext(new(function Object(){})/*,{microtaskMode:'afterEvaluate'}*/);
+    //very important: replace dangerous
+    ctxx.eval=(js)=>jevalx_raw(js,ctxx,timeout,js_opts)[1];//NOTES no need use js_opts for eval()
     ctxx.Symbol = (...args)=>{throw {message:'TodoSymbol'}};
     ctxx.Reflect=(...args)=>{throw {message:'TodoReflect'}};
     ctxx.Proxy=(...args)=>{throw {message:'TodoProxy'}};
-    [ctxx,rst] = jevalx_raw(`(()=>{ Function=${sFunction}; constructor.__proto__.constructor=Function; })()`,ctxx);
-  }
-  return jevalx_raw(js,ctxx,timeout)
+    [ctxx,rst] = jevalx_raw(`Function=${sFunction};constructor.__proto__.constructor=Function;Object=constructor.__proto__`,ctxx);
+    if (ctx) Object_assign(ctxx,ctx);
+  }else{ ctxx = ctx; }
+  return jevalx_raw(js,ctxx,timeout,js_opts)
 }
 
 let jevalx_core = async(js,ctx,timeout=666)=>{
@@ -49,22 +44,25 @@ let jevalx_core = async(js,ctx,timeout=666)=>{
   try{
     let js_opts=({async importModuleDynamically(specifier, referrer, importAttributes){
       //TODO make some fake import in future...or put it in the args by caller...
-      console_log('TODO EvilImport',{importAttributes});
+      //console_log('TODO EvilImport',{specifier,referrer});
       evil++; err = {message:'EvilImport',js};
+      if (specifier=='fs'){
+        return import(`./fake${specifier||""}.mjs`)
+      }
       throw('EvilImport');
     }});
     await new Promise(async(r,j)=>{
       setTimeout(()=>{j({message:'TimeoutX',js,js_opts})},timeout+666)//FOR DEV ONLY...
       try{
-        [ctxx,rst] = jevalx_setup(js,ctx,timeout,js_opts);
+        [ctxx,rst] = jevalx_ext(js,ctx,timeout,js_opts);
         let sandbox_level = 9;
         for (var i=0;i<sandbox_level;i++) {
-          console_log('debug',i,rst);
+          //console_log('debug',i,rst);
           if (evil || !rst || err) break;
           if (findEvilGetter(rst)) throw {message:'EvilProto',js};
           if ('function'==typeof rst) {//run in the sandbox !
             ctxx['rst_tmp']=rst;
-            [ctxx,rst] = jevalx_raw('rst_tmp()',ctxx,timeout,js_opts);
+            [ctxx,rst] = jevalx_ext('rst_tmp()',ctxx,timeout,js_opts);
           }else if (rst.then){
             rst = await new Promise(async(r,j)=>{
               setTimeout(()=>j({message:'Timeout',js}),timeout);
@@ -81,5 +79,5 @@ let jevalx_core = async(js,ctx,timeout=666)=>{
   return rst;
 }
 var jevalx = jevalx_core;
-if (typeof module!='undefined') module.exports = {jevalx,jevalx_core,jevalx_raw,jevalx_setup}
+if (typeof module!='undefined') module.exports = {jevalx,jevalx_core,jevalx_raw,jevalx_ext}
 
