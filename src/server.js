@@ -5,11 +5,19 @@
 //node server /app=default /port=8001 /static_local=../docs /static=static/
 
 const globalThisWtf = {};
-for(let k of Object.keys(globalThis)){
-  console.log(k)
+for(let k of [...Object.keys(globalThis)]){
   globalThisWtf[k] = globalThis[k];
-  delete globalThisWtf;
+  console.log(k,typeof globalThis[k]);
+  delete globalThis[k];
 }
+globalThisWtf.require = require;
+//console.log('globalThisWtf.require',globalThisWtf.require);
+
+//global locking of __proto__... once for all...
+Object.defineProperty(Object.prototype, '__proto__', {
+  get() { return undefined; }, set(newValue) { }
+});
+
 
 const { argv2o, argo, tryx, s2o, o2s, tryp, myfetch, http, urlModule, gzip2s, fs} = require('../docs/myes')
 const isValidUrl = (s)=>s && (s.startsWith('https:')||s.startsWith('http:'));

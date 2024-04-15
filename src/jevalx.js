@@ -1,23 +1,61 @@
+/** Quick Notes:
+
+All known escape instances are related to the Host Object. The current strategy involves cutting off connections to the following components to mitigate risks:
+
+*) "constructor": Due to restrictions in node:vm, it cannot be deleted. Therefore, we must clear and secure its dangerous properties and methods.
+*) "Object": This includes dangerous methods such as defineProperty, defineProperties, __defineGetter__, and __defineSetter__, which could potentially aid escapes.
+*) "Error": In some cases, host Error will be thrown. We have locked them to prevent exploits through this bug.
+*) "import()": A bug in node:vm that returns a Host Promise. We currently need to secure the host Promise as well.
+*) "output": Outputs from the sandbox might contain malicious setters/getters or prototype pollution, which we must detect and neutralize.
+*) "context": All contexts may introduce some form of prototype attack. A TODO has been marked here to wrap or proxy it for enhanced security.
+*/
+
+//rc3b
+Object.defineProperty(Object.prototype, '__proto__', {
+  get() { console.log('host__proto__999_get');return undefined; },
+  set(newValue) { console.log('host__proto__999_set',newValue) }
+});
+// X VOID
+function X(){ if (this instanceof X){ }else{ return new X() } }
+//
+Object.defineProperty(globalThis,'AsyncFunction',{value:(async()=>{}).constructor,writable:false,enumerable:false,configurable:false});
+//AsyncFunction = (async()=>{}).constructor;
+
 const vm = require('node:vm');
 const processWtf = require('process');
+const timers = require('timers');
+
+const setTimeout = timers.setTimeout;
 
 //boost:
-const console_log = console.log;
 const Object_getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const Object_getPrototypeOf = Object.getPrototypeOf;
 const Object_getOwnPropertyNames = Object.getOwnPropertyNames;
-const getOwnPropertyNames = Object_getOwnPropertyNames;
 const Object_assign = Object.assign;
-
+const Object_setPrototypeOf = Object.setPrototypeOf;
+const Object_freeze = Object.freeze;
 const delay = (t,rt)=>new Promise((r,j)=>setTimeout(()=>r(rt),t));
 
-// for __proto__ Pollultion:
+
+// LOCK
+function XX(obj, with_prototype = true, do_freeze = true) {
+  if (obj == null || obj == undefined) return obj;
+  if (with_prototype && obj.prototype) {
+    Object.setPrototypeOf(obj.prototype, null);
+    if (do_freeze) Object.freeze(obj.prototype);
+  }
+  Object.setPrototypeOf(obj, X.prototype);
+  if (do_freeze) Object.freeze(obj);
+  return obj;
+}
+
+XX(X);//L0!!
+
 function findEvil(obj,maxdepth=3) {
   let currentObj = obj;
   let depth = 0;
   while (currentObj !== null && currentObj!==undefined && depth < maxdepth) {
-    //'constructor','toString','__proto__',
-    const properties = ['constructor','then'];//Object_getOwnPropertyNames(currentObj);
+    const properties = ['message','code','constructor','then'];//Object_getOwnPropertyNames(currentObj);
     for (let i = 0; i < properties.length; i++) {
       const descriptor = Object_getOwnPropertyDescriptor(currentObj, properties[i]);
       if (descriptor && (typeof descriptor.get === 'function' || typeof descriptor.set == 'function')) {
@@ -31,24 +69,35 @@ function findEvil(obj,maxdepth=3) {
 }
 
 // for Promise Pollultion:
-const Promise___proto__ = Promise.__proto__;
-const Promise___proto___apply = Promise.__proto__.apply;
-const Promise___proto___then = Promise.__proto__.then;
-const Promise_prototype_catch = Promise.prototype.catch;
-const Promise_prototype_then = Promise.prototype.then;
-const Promise_getPrototypeOf = Object_getPrototypeOf(Promise);
-//Object.setPrototypeOf(Promise,null);///tmp protect Host Promise
+const Promise_getPrototypeOf = Object.getPrototypeOf(Promise);//L1 for console display
+
+//L0!! @q9 
+XX(Promise.prototype.catch);
+XX(Promise.prototype.finally);
+XX(Promise.prototype.then);
+
+//@r23 host-RangeError throws when error-stack-overflow (Bug of node:vm):
+RangeError.prototype.constructor=X;
+//XX(RangeError.prototype);
+//@r24 TypeError
+TypeError.prototype.constructor=X;
+//XX(TypeError.prototype);
 
 let jevalx_raw = (js,ctxx,timeout=666,js_opts)=>[ctxx,vm.createScript(js,js_opts).runInContext(ctxx,{breakOnSigint:true,timeout})];
 
-//const S_FUNCTION = "(...args)=>eval(`(${args.slice(0,-1).join(',')})=>{${args[args.length-1]}}`)";
-
-const S_SETUP = [
-  'console','Symbol','Reflect','Proxy','Object.prototype.__defineGetter__','Object.prototype.__defineSetter__'
+const S_SETUP = `
+Object.defineProperty(Object.prototype, '__proto__', {
+  get() { console.log('box__proto__999_get');return undefined; },
+  set(newValue) { console.log('box__proto__999_set',newValue) }
+});
+Object.defineProperty(this,'AsyncFunction',{value:(async()=>{}).constructor,writable:false,enumerable:false,configurable:false});
+`+[
+'console',//
+'Symbol','Reflect','Proxy','Object.prototype.__defineGetter__','Object.prototype.__defineSetter__',//L0
+'Error','AggregateError','EvalError','RangeError','ReferenceError','SyntaxError','TypeError','URIError',//L1
+'WebAssembly',//L1
 ].map(v=>'delete '+v+';').join('')
 +[
-//  '__defineGetter__',
-//  '__defineSetter__',
   '__lookupGetter__',
   '__lookupSetter__',
   'hasOwnProperty',
@@ -57,133 +106,105 @@ const S_SETUP = [
   'toLocaleString',
   'toString',
   'valueOf'
-].map(v=>'Object.setPrototypeOf('+v+',null);delete constructor.'+v+';').join('')
+].map(v=>'Object.setPrototypeOf('+v+',null);Object.freeze('+v+');delete constructor.'+v+';').join('')
 +`
-delete constructor.__proto__.__proto__.constructor;
-delete constructor.__proto__.__proto__.__defineGetter__;
-delete constructor.__proto__.__proto__.__defineSetter__;
-delete constructor.__proto__.constructor;
-Object.setPrototypeOf(constructor.prototype,null);
-delete constructor.prototype;
-Object.setPrototypeOf(constructor,null);
-Object.freeze(constructor);
-Object.freeze(Function.__proto__);
-//Object.freeze(Function);
-for(let k of Object.getOwnPropertyNames(Object)){if(['name','fromEntries','keys','entries','is','values','getOwnPropertyNames'].indexOf(k)<0){delete Object[k]}}
+
+class Error {
+  constructor(message,code) { this.message = message; this.name = 'Error'; if (code) this.code = code; }
+  toString() { return JSON.stringify(this) }
+}
+
+for(let k of Object.getOwnPropertyNames(Object)){if(['name','fromEntries','keys','entries','is','values','getOwnPropertyNames'].indexOf(k)<0){delete Object[k]}}//L0
+
 Promise
 `;
 
-//tmp for __proto__ attach, clean later..
-let sandbox_safe_method = function(m,do_return=false){
-  let rt = function(...args){ let rt = m(...args); if (do_return) return rt }
-//  eval([
-//  //  '__defineGetter__',
-//  //  '__defineSetter__',
-//    '__lookupGetter__',
-//    '__lookupSetter__',
-//    'hasOwnProperty',
-//    'isPrototypeOf',
-//    'propertyIsEnumerable',
-//    'toLocaleString',
-//    'toString',
-//    'valueOf'
-//  ].map(v=>'Object.setPrototypeOf(rt.'+v+',null);delete rt.'+v+';').join(''))
-Object.setPrototypeOf(rt,null);
-Object.freeze(rt);
-//console.log('sandbox_safe_method',rt);
-  return rt;
-};
+//let sandbox_safe_sync_method = function(m,do_return=false){
+//  return XX( function(...args){ let rt2 = m(...args); if (do_return) if (rt2) XX(rt2); return rt2 } )
+//};
 
 let jevalx_core = async(js,ctx,timeout=666,json_output=false,return_ctx=false,user_import_handler=undefined)=>{
-  let ctxx,rst,err,evil=0,jss= JSON.stringify(js);
-  let tmpHandlerReject = (ex, promise)=>{ if (!err) err={message:'EvilXb',js};
-    //err.message!='EvilXb' &&
-    console.log('EvilXb=>',ex,'<=',jss)
-  };
-  let tmpHandlerException = (ex, promise)=>{ if (!err) err={message:'EvilXa',js};
-    //err.message!='EvilXa' &&
-    console.log('EvilXa=>',ex,'<=',jss)
-  };
+  let ctxx,rst,err,evil=0,jss= JSON.stringify(js),done=false;
+  let last_resolve,last_reject;//for quicker return.
+    let tmpHandlerException = (ex, promise)=>{ if (!err) err={message:ex?.message||'EvilXa',js,code:ex?.code,tag:'Xa',ex};
+      //err.message!='EvilXa' && console.log('EvilXa=>',ex,'<=',jss)
+      if (last_reject) last_reject(err);
+    };
+    let tmpHandlerReject = (ex, promise)=>{ if (!err) err={message:ex?.message||'EvilXb',js,code:ex?.code,tag:'Xb',ex};
+      //err.message!='EvilXb' && console.log('EvilXb=>',ex,'<=',jss)
+      if (last_reject) last_reject(err);
+    };
   try{
     processWtf.addListener('unhandledRejection',tmpHandlerReject);
     processWtf.addListener('uncaughtException',tmpHandlerException)
-    //support the user_import_handler()
     let _Promise;
-    let js_opts=({async importModuleDynamically(specifier, referrer, importAttributes){
-      if (!evil && !err){
-        if (user_import_handler) { return user_import_handler({specifier, referrer, importAttributes}) }
-        if (specifier=='fs'){ return import(`./fake${specifier||""}.mjs`) }
-      }
-      evil++; err = {message:'EvilImport',js};
-      throw('EvilImport');
-    }});
+    //to support the user_import_handler()
+    let js_opts;//TODO for import()
     await new Promise(async(r,j)=>{
-      setTimeout(()=>{j({message:'TimeoutX',js,js_opts})},timeout+666)//FOR DEV TEST...
+      last_resolve = r, last_reject = j;
+      setTimeout(()=>{j({message:'TimeoutX',js,js_opts})},timeout+666)//L0
       try{
-        //GENESIS
-        ctxx = vm.createContext(new function(){});//BIGBANG
-        [ctxx,_Promise] = jevalx_raw(S_SETUP,ctxx);//INIT
-        //ctxx.console = {log:console.log,props:getOwnPropertyNames};//DEV
-        let console_dev = Object.create(null);
-        console_dev['log']=sandbox_safe_method(console.log);
-        ctxx.console = console_dev;
-        if (ctx) Object_assign(ctxx,ctx);//CTX: TODO, need to protect the outer stuff for the __proto__ pollution.
+        if (ctx && vm.isContext(ctx)) { ctxx = ctx } //SESSION
+        else {
+          //GENESIS
+          ctxx = vm.createContext(new X);//BIGBANG FROM X
+          [ctxx,_Promise] = jevalx_raw(S_SETUP,ctxx);
 
-        //PRECAUTION
-        Promise.prototype.catch = function(){
-          return new _Promise((rr,jj)=>{ Promise_prototype_catch.call(this,error=>jj(error))});
-        };
-        Object.setPrototypeOf(Promise.prototype.catch,null);
-        Object.freeze(Promise.prototype.catch);
+          //@r15b (no need XX() after global __proto__ protection
+          //_Promise.delay = XX((t,r)=>new _Promise((rr,jj)=>delay(t).then(()=>(done||rr(r)))));
+          _Promise.delay = (t,r)=>new _Promise((rr,jj)=>delay(t).then(()=>(done||rr(r))));
 
-        //SIMULATION{{{
-        [ctxx,rst] = jevalx_raw(js,ctxx,timeout,js_opts);
-        let sandbox_level = 9;
-        for (var i=0;i<sandbox_level;i++) {
-          //console_log('debug',i,rst);
-          if (evil || !rst || err) break;
-          //if (findEvil(rst)) throw {message:'EvilProto',js};
-          if ('function'==typeof rst) {//run in the sandbox !
-            ctxx['rst']=rst;
-            [ctxx,rst] = jevalx_raw('(()=>rst())()',ctxx,timeout,js_opts);
-          }else if (rst.then){
-            rst = await new Promise(async(r,j)=>{
-              setTimeout(()=>j({message:'Timeout',js}),timeout);
-              try{ r(await rst) } catch(ex) { j(ex) };
-            });
-          } else break;
+          //let console_dev = Object.create(null);
+          //let fake_console_log = sandbox_safe_sync_method(console.log);
+          //console_dev['log']=fake_console_log;
+          //ctxx.console = console_dev;
+          ctxx.console = {log:console.log};//can be replaced by ctx.console
+
+          //safe now ;)
+          if (ctx) Object_assign(ctxx,ctx);
         }
+        //PRECAUTION L0!!
+        Object.prototype.constructor=X;
+        Function.prototype.constructor = X;
+        AsyncFunction.prototype.constructor = X;
+        Promise.prototype.constructor = X;
 
-        //SIMULATION}}}
+        //SIMULATION
+        [ctxx,rst] = jevalx_raw(`(async()=>{try{return await(async z=>{while(z&&((z instanceof Promise)&&(z=await z)||(typeof z=='function')&&(z=z())));return ${!!json_output}?JSON.stringify(z):z})(eval(${jss}))}catch(ex){return Promise.reject(ex)}})()`,ctxx,timeout,js_opts);
         //HOUSEWEEP
+        rst = await rst;//above we use (async()=>{...})() which sure is a Promise
+        done = true;
         if (rst) {
-          if (json_output){
-            ctxx['rst'] = rst;
-            rst = jevalx_raw('JSON.stringify(rst==this?{}:rst)',ctxx,timeout,js_opts)[1]; //do inside...
-            rst = JSON.parse(rst);
-          }else{
-            if (findEvil(rst)) throw {message:'EvilProtoX',js};
-            //delete rst['toString']; //delete rst['__proto__']; //delete rst['constructor'];
-          }
+          if (findEvil(rst)) throw {message:'EvilProtoX',js};//seem no need now?
+          delete rst['hasOwnProperty'];delete rst['then'];delete rst['toString']; delete rst['constructor']; delete rst['toJSON'];//TODO
         }
-      }catch(ex){ err={message:typeof(ex)=='string'?ex:(ex?.message|| 'EvilXc'),js};
-        //err.message=='EvilXc' &&
-        console.log('EvilXc=>',ex,'<=',jss)
+      }catch(ex){ if (!err) err={message:typeof(ex)=='string'?ex:(ex?.message|| 'EvilXc'),js,code:ex?.code,tag:'Xc'};
+        err.message=='EvilXc' && console.log('EvilXc=>',ex,'<=',jss)
       }
       setTimeout(()=>{ if (evil||err) j(err); else r(rst); },1);
     });
-  }catch(ex){ err = {message:ex?.message||'EvilXd',js};
-    //err.message=='EvilXd' &&
-    console.log('EvilXd=>',ex,'<=',jss)
+  }catch(ex){ if (!err) err = {message:ex?.message||'EvilXd',js,code:ex?.code,tag:'Xd'};
+    err.message=='EvilXd' && console.log('EvilXd=>',ex,'<=',jss) //currently only TimeoutX @Q7x
   }
   finally{
-    Object.setPrototypeOf(Promise,Promise_getPrototypeOf);
-    Promise.prototype.catch = Promise.prototype.catch;//
-    Promise.prototype.then = Promise_prototype_then;//
-    Promise.__proto__.constructor=Function;
-    Object.prototype.constructor=Object;
+    done = true;
+    //Object.setPrototypeOf(Promise,Promise_getPrototypeOf);//old for display
+
+    //for inspect display...
+    Promise.prototype.constructor = Promise;//
+    Object.prototype.constructor = Object;//
+    Function.prototype.constructor = Function;//
+    AsyncFunction.prototype.constructor = AsyncFunction;//
+
     processWtf.removeListener('unhandledRejection',tmpHandlerReject);
     processWtf.removeListener('uncaughtException',tmpHandlerException)
+  }
+  if (err) {
+    if (err?.code=='ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG') { err.message = 'EvilImportX'; err.code='EVIL_IMPORT_FLAG';}
+    if (err?.code=='ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING') { err.message = 'EvilImport'; err.code='EVIL_IMPORT';}
+    if (err?.code=='ERR_SCRIPT_EXECUTION_TIMEOUT') {err.message = 'Timeout'+timeout;err.code='TIMEOUT';}
+    if (!err?.time) err.time = new Date().getTime();//for app
+    if (!err?.id) err.id = err.time;//for app
   }
   if (evil || err) throw err;
   if (return_ctx) return [ctxx,rst];
@@ -191,5 +212,7 @@ let jevalx_core = async(js,ctx,timeout=666,json_output=false,return_ctx=false,us
 }
 let jevalx = jevalx_core;
 
-if (typeof module!='undefined') module.exports = {jevalx,jevalx_core,jevalx_raw,S_SETUP,delay}
+if (typeof module!='undefined') module.exports = {jevalx,jevalx_core,jevalx_raw,S_SETUP,delay,X,XX,
+VER:'rc3b'
+}
 
