@@ -1,14 +1,12 @@
 let init_time = new Date().getTime()/1000;
 let module_exports = async(Application={})=>{
-  let {req,res,url,body,argo,app_id,reqHOST,reqPORT,globalThisWtf,process_pid}=Application;
+  let {req,res,url,body,argo,app_id,reqHOST,reqPORT,globalThisWtf,main_pid}=Application;
 
 let requireWtf = require;//globalThisWtf.require;
 let process = requireWtf('process');//globalThisWtf.process;
 
-//let process_pid = process.pid;
-
-let fk_id = process.env.fk_id;
-let pid = process.env.pid;
+let fk_idx = process.env.fk_idx;
+let fk_pid = process.env.pid;
 
 let {o2s,s2o,tryx,tryp,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync,urlModule,safe,qstr,get_timestamp,get_time_iso,get_time_YmdHMS,jeval
 } = require('../docs/myes')
@@ -86,7 +84,7 @@ async function a2tbl(a) {
 
   let ctx = {
     //quick tools:
-    pid,fk_id,process_pid,
+    fk_pid,fk_idx,main_pid,
     md5,md5_ascii,o2s,s2o,a2csv,a2tbl,init_time,now,safe,qstr,get_time_iso,get_time_YmdHMS,get_timestamp,reload,
     //log:console.log,
     $:jPathAsync,//e.g. $(news.history_o(945629),'data'),

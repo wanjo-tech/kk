@@ -14,7 +14,7 @@ for(let k of [...Object.keys(globalThis),'require','process']){
 
 globalThisWtf.require = require;
 let process = globalThisWtf.process;//require('process');
-let process_pid = process.pid;
+let main_pid = process.pid;
 console.log('process.pid',process.pid);
 
 //console.log('globalThisWtf.require',typeof globalThisWtf.require);
@@ -130,7 +130,7 @@ const server = http.createServer(async(req, res) => {
       if (!isValidUrl(url)){
         if (!body) body = decodeURI(urlModule.parse(url).query||'')
         let app_id = (argo.app||'default');
-        return await require('./app'+app_id)({...Application,...{req,res, url,body,argo,app_id,reqHOST,reqPORT,globalThisWtf,process_pid}})
+        return await require('./app'+app_id)({...Application,...{req,res, url,body,argo,app_id,reqHOST,reqPORT,globalThisWtf,main_pid}})
       }
       //////////////////// fwd 
       if (!argo.fwd) throw 'fwd'
@@ -180,29 +180,29 @@ if(cpus>1){ // start cluster mode when not solo
   let logger = console;
   //let WorkerPool = {}
   if (cluster.isMaster) {//split since here.
-          let forkWorker = (fk_id) => { //NOTES: fk_id for debug only
-                  const worker = cluster.fork({fk_id,pid:process.pid});
-                  logger.log('forkWorker',fk_id);
+          let forkWorker = (fk_idx) => {
+                  const worker = cluster.fork({fk_idx,pid:process.pid});
+                  logger.log('forkWorker',fk_idx);
                   worker.on('disconnect', () => {
-                          logger.log(`worker${fk_id} disconnect, will auto launch again...`);
-                          forkWorker(fk_id);
+                          logger.log(`worker${fk_idx} disconnect, will auto launch again...`);
+                          forkWorker(fk_idx);
                   })
                   //.on('message',msgInfo=>process_on_message(msgInfo,4))
-                  .on('listening', (address) => logger.log(`worker${fk_id} is listening: `,address))
+                  .on('listening', (address) => logger.log(`worker${fk_idx} is listening: `,address))
                   .on('online',()=>{
-                          logger.log(`NOTICE worker${fk_id} is online`,);
+                          logger.log(`NOTICE worker${fk_idx} is online`,);
                           //WorkerPool[worker.process.pid]=worker;//
                   }).on('exit', (code, signal) => {
                           //delete WorkerPool[worker.process.pid];
-                          if (signal) { logger.log(`worker${fk_id} was killed by signal: ${signal}`); }
-                          else if (code !== 0) { logger.log(`worker${fk_id} exited with error code: ${code}`); }
-                          else { logger.log(`worker${fk_id} exit success ${code},${signal}`); }
+                          if (signal) { logger.log(`worker${fk_idx} was killed by signal: ${signal}`); }
+                          else if (code !== 0) { logger.log(`worker${fk_idx} exited with error code: ${code}`); }
+                          else { logger.log(`worker${fk_idx} exit success ${code},${signal}`); }
                   });
           };
           cluster.on('exit', (worker, code, signal)=>{
           	logger.log('worker %d died (%s). restarting...', worker.process.pid, signal || code);
           	//cluster.fork();
-                forkWorker( worker.fk_id );
+                forkWorker( worker.fk_idx );
           	//logger.log('[REFORK] Server');
           });
           //for (let i = 1; i < cpus; i++)
