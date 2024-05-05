@@ -22,6 +22,31 @@ MathX.Tensor.prototype.abs = function() {
   }
 };
 
+MathX.tmp = async function() {
+  console.error('test async MathX.tmp');
+  let rt = await Math.random();
+  //let rt = Math.random();//
+  console.error('test async MathX.tmp rt',rt);
+  return rt;
+};
+MathX.tmp2 = function() {
+  console.error('test async MathX.tmp2');
+  //let rt = await Math.random();
+  //let rt = Math.random();//
+  let rt = (async()=>Math.random())();
+  console.error('test async MathX.tmp2 rt',rt);
+  return rt;
+};
+MathX.tmp3 = async function() {
+  //console.error('test async MathX.tmp3');
+  //let rt = await Math.random();
+  //let rt = Math.random();//
+  let rt = await (async()=>Math.random())();
+  console.error('test async MathX.tmp3 rt',rt);
+  return rt;
+};
+
+
 MathX.abs = function(value) {
   if (value instanceof MathX.Tensor) {
     return value.abs();
