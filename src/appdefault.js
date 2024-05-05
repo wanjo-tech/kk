@@ -47,8 +47,6 @@ async function a2tbl(a) {
   return s
 }
 
-
-  //SECURITY VULNERABLE ;)
   let reload = (x='app'+app_id,clear=true)=>{let mm = tryRequire('../src/'+x,clear); return (mm&&mm.init_time)?mm.init_time:typeof(mm)};
 
   const reqHeaders = req.headers;
@@ -85,7 +83,10 @@ async function a2tbl(a) {
   let ctx = {
     //quick tools:
     fk_pid,fk_idx,main_pid,
-    md5,md5_ascii,o2s,s2o,a2csv,a2tbl,init_time,now,safe,qstr,get_time_iso,get_time_YmdHMS,get_timestamp,reload,
+tmp1:(async()=>Math.random()),
+tmp2:(async()=>Math.random())(),
+    //md5,md5_ascii,o2s,s2o,a2csv,a2tbl,now,safe,qstr,get_time_iso,get_time_YmdHMS,get_timestamp,reload,
+init_time,
     //log:console.log,
     $:jPathAsync,//e.g. $(news.history_o(945629),'data'),
     //mydirname,
@@ -125,9 +126,12 @@ return m(...args);
       },
   }//ctx
 
+//TODO 
+//await jevalx(`(()=>tmp())()`,{tmp:(async()=>{let rt=Math.random();console.error(rt);return rt;})})
+
   //TODO move argo.apis to _() !
-  //for (let k of (argo.apis||'math').split(','))
-  for (let k of ['ct'])
+  for (let k of (argo.apis||'math').split(','))
+  //for (let k of ['ct'])
   {
     //console.log('preload api',k);
     try{
@@ -142,6 +146,7 @@ return m(...args);
   try{
     //TODO have a defender (level one) here. and add level two at the server/firewall stage.
     rst = await jevalx(body,ctx,{timeout:2999,json_output:false});
+    //rst = await jevalx(body,ctx,{timeout:2999,json_output:false,microtaskMode:'false'});
     console.log(body,'=>',rst);
     if (typeof rst=='undefined') rst = null;
   }catch(ex_evalx){
@@ -162,4 +167,68 @@ return m(...args);
   return Application.fastReturn({statusCode,headers,data})
 }
 module_exports.init_time = init_time;
-module.exports = module_exports;
+
+const { isMainThread,parentPort, workerData } = require('worker_threads');
+
+async function processData(options) {
+  let {o2s,s2o,tryx,tryp,myfetch,fs,date,now,md5,md5_ascii,tryRequire,gzip2s,jPath,jPathAsync,urlModule,safe,qstr,get_timestamp,get_time_iso,get_time_YmdHMS,jeval
+} = require('../docs/myes');
+
+  let {jevalx} = require('./jevalx')
+  let {url,body,argo} = options;
+  let ctx = { init_time }
+  for (let k of (argo.apis||'math').split(','))
+  //for (let k of ['ct'])
+  {
+    console.log('preload api',k);
+    try{
+      let m = await tryRequire('../src/api'+k,false,console.log);
+      if (typeof(m)=='function') m= await m({});//DESIGN !
+      ctx[k] = m;
+    }catch(ex){console.log('err',k,ex)}
+  }
+  let rst;
+  try{
+    //TODO have a defender (level one) here. and add level two at the server/firewall stage.
+    //rst = await jevalx(body,ctx,{timeout:2999,json_output:false});
+    rst = await jevalx(body,ctx,{timeout:2999,json_output:false,microtaskMode:'false'});
+    console.log(body,'=>',rst);
+    if (typeof rst=='undefined') rst = null;
+  }catch(ex_evalx){
+    //TODO check tag and code, if security send message to the defender.
+    let {message,code,js,ex,id} = ex_evalx;
+    console.log(body,'=>',ex);
+    rst = {message,code,id}
+  }
+  data = rst || {};
+
+if (typeof data!='string') data=JSON.stringify(data);//TODO
+return data;
+    //// Example processing: reverse a string or add numbers, etc.
+    //if (typeof data === 'string') {
+    //    return data.split('').reverse().join('');
+    //} else if (typeof data === 'number') {
+    //    return data * 2;  // Example: multiply the number by 2
+    //} else {
+    //    return data;  // Return data unchanged if not string or number
+    //}
+}
+
+if (!isMainThread){
+
+      processData(workerData).then(data=>{
+          // Send the result back to the main thread
+          parentPort.postMessage({
+              status: 'success',
+              data,
+          });
+      }).catch(error=>{
+          // Send an error message back to the main thread
+          parentPort.postMessage({
+              status: 'error',
+              message: error.message
+          });
+      });
+}else{
+  module.exports = module_exports;
+}

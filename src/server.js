@@ -127,11 +127,16 @@ const server = http.createServer(async(req, res) => {
           reqHeaders['referer']=referer_path
         }
       }
+
       if (!isValidUrl(url)){
         if (!body) body = decodeURI(urlModule.parse(url).query||'')
         let app_id = (argo.app||'default');
-        return await require('./app'+app_id)({...Application,...{req,res, url,body,argo,app_id,reqHOST,reqPORT,globalThisWtf,main_pid}})
+        //return await require('./app'+app_id)({...Application,...{req,res, url,body,argo,app_id,reqHOST,reqPORT,globalThisWtf,main_pid}})
+        var {data} = await myfetch('worker://./app'+app_id,{url,body,headers,argo});
+console.log('debug data',data);
+        return fastReturn({data})
       }
+
       //////////////////// fwd 
       if (!argo.fwd) throw 'fwd'
       let agent;
