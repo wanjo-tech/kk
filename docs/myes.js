@@ -54,35 +54,27 @@ function decompress(response, encoding) {
     default: return response;
   }
 }
-function handleWorkerProtocol(url, options) {
+function fetchWorker(url, options) {
     const timers = require('timers');
     let {setTimeout,clearTimeout} = timers;
     const { Worker } = require('worker_threads');
-    //const filePath = urlModule.fileURLToPath(url.replace('worker://', 'file://'));
+
     const filePath = url.replace('worker://', '');
-    let p = new Promise((resolve, reject) => {
+    let timeout = options.timeout || 666;
+    return new Promise((resolve, reject) => {
         const timeoutId = setTimeout(()=>{
-            reject({'message':'Timeout'})
-            worker.terminate();
-        },options.timeout||666);
+            reject({code:'TIMEOUT'+timeout});
+            worker.terminate();//
+        },timeout);
         const worker = new Worker(filePath, { workerData: options });
         worker.on('message', message=>{
             clearTimeout(timeoutId);
             resolve(message);
             worker.terminate();
         });
-        worker.on('error',(error) => {
-            clearTimeout(timeoutId);
-            reject(error);
-            worker.terminate();
-        }); 
-        worker.on('exit', (code) => {
-            clearTimeout(timeoutId);
-            if (code !== 0) reject(new Error(`Worker stopped with exit code ${code}`));
-            worker.terminate();
-        });
+        worker.on('error',reject); 
+        worker.on('exit',(code) => reject({code}));//
     });
-    return p;
 }
 //in case no fetch() but https or http do.
 function myfetch(url, options={}) {
@@ -92,7 +84,7 @@ function myfetch(url, options={}) {
     options.headers = options.headers || {};
     options.headers['host'] = parsedUrl.host;
     if (url.startsWith('worker://')) {
-        return handleWorkerProtocol(url, options);
+        return fetchWorker(url, options);
     } else if (url.startsWith('https://')) {
         options.rejectUnauthorized = false; // Disable SSL certificate validation
     } else if (url.startsWith('http://')){

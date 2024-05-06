@@ -132,7 +132,7 @@ const server = http.createServer(async(req, res) => {
         if (!body) body = decodeURI(urlModule.parse(url).query||'')
         let app_id = (argo.app||'default');
         //return await require('./app'+app_id)({...Application,...{req,res, url,body,argo,app_id,reqHOST,reqPORT,globalThisWtf,main_pid}})
-        var {data} = await myfetch('worker://./app'+app_id,{url,body,headers,argo});
+        var {data} = await myfetch('worker://./app'+app_id,{url,body,headers,argo,timeout:2999});
 console.log('debug data',data);
         return fastReturn({data})
       }
