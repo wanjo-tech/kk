@@ -54,26 +54,95 @@ function decompress(response, encoding) {
     default: return response;
   }
 }
+
+/* TODO future worker pool to boost performance?
+class WorkerPool {
+    constructor(size, workerFile) {
+        this.size = size;
+        this.workerFile = workerFile;
+        this.workers = [];
+        this.tasks = [];
+        this.init();
+    }
+
+    init() {
+        for (let i = 0; i < this.size; i++) {
+            const worker = new Worker(this.workerFile);
+            worker.on('message', (result) => this.handleResult(worker, result));
+            worker.on('error', (err) => this.handleError(worker, err));
+            worker.on('exit', (code) => {
+                if (code !== 0) console.error(`Worker stopped with exit code ${code}`);
+                this.replaceWorker(worker);
+            });
+            this.workers.push({ worker, busy: false });
+        }
+    }
+
+    handleResult(worker, result) {
+        clearTimeout(worker.timeoutId);
+        const workerObj = this.workers.find(w => w.worker === worker);
+        workerObj.busy = false;
+        this.runNext();
+        console.log(result);
+    }
+
+    handleError(worker, err) {
+        console.error(`Worker error: ${err}`);
+        clearTimeout(worker.timeoutId);
+        const workerObj = this.workers.find(w => w.worker === worker);
+        workerObj.busy = false;
+        this.runNext();
+    }
+
+    replaceWorker(worker) {
+        const index = this.workers.findIndex(w => w.worker === worker);
+        const newWorker = new Worker(this.workerFile);
+        newWorker.on('message', (result) => this.handleResult(newWorker, result));
+        newWorker.on('error', (err) => this.handleError(newWorker, err));
+        this.workers[index] = { worker: newWorker, busy: false };
+    }
+
+    runNext() {
+        if (this.tasks.length === 0) return;
+        const workerObj = this.workers.find(w => !w.busy);
+        if (!workerObj) return;
+        const { taskData, timeout } = this.tasks.shift();
+        workerObj.busy = true;
+        workerObj.worker.postMessage(taskData);
+        workerObj.timeoutId = setTimeout(() => this.handleTimeout(workerObj.worker), timeout);
+    }
+
+    handleTimeout(worker) {
+        console.error(`Worker timeout: terminating task`);
+        worker.terminate(); // 终止长时间运行的任务
+        const workerObj = this.workers.find(w => w.worker === worker);
+        workerObj.busy = false;
+        this.runNext();
+    }
+
+    addTask(taskData, timeout = 10000) {
+        this.tasks.push({ taskData, timeout });
+        this.runNext();
+    }
+}
+
+//const pool = new WorkerPool(4, './workerTask.js');
+//pool.addTask({data: 'Task 1 data'}, 5000);
+//pool.addTask({data: 'Task 2 data'}, 10000);
+
+*/
 function fetchWorker(url, options) {
     const timers = require('timers');
-    let {setTimeout,clearTimeout} = timers;
+    let {setTimeout} = timers;
     const { Worker } = require('worker_threads');
-
-    const filePath = url.replace('worker://', '');
+    const filePath = url.replace('worker://', '');//e.g. worker://./wtf.js
     let timeout = options.timeout || 666;
-    return new Promise((resolve, reject) => {
-        const timeoutId = setTimeout(()=>{
-            reject({code:'TIMEOUT'+timeout});
-            worker.terminate();//
-        },timeout);
+    return new Promise((resolve,reject)=>{
+        const timeoutId = setTimeout(()=>{worker.terminate();reject({code:'TIMEOUT'+timeout})},timeout);
         const worker = new Worker(filePath, { workerData: options });
-        worker.on('message', message=>{
-            clearTimeout(timeoutId);
-            resolve(message);
-            worker.terminate();
-        });
+        worker.on('message', message=>{worker.terminate();resolve(message)});
         worker.on('error',reject); 
-        worker.on('exit',(code) => reject({code}));//
+        worker.on('exit',(code)=>reject({code}));
     });
 }
 //in case no fetch() but https or http do.

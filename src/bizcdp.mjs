@@ -24,6 +24,34 @@ var cdp_call = (ws,method,params)=>new Promise((resolve,reject)=>{
 })
 
 const sleep_async = (i)=>new Promise((r,j)=>setTimeout(r,i))
+function findFreePort(startPort=19222,range=1024,maxAttempts=99) {
+  let attempts = 0; // 尝试的次数计数器
+  return new Promise((resolve,reject)=>{
+      // 生成一个随机起始端口号。这里我们假设一个基本安全的起始端口号范围1024到65535之间
+      // 使用取模运算确保端口号加上范围不会超过65535
+      const startingPort = 19222 + Math.floor(Math.random() * range);
+
+      // 定义一个内部函数，尝试监听端口，如果失败，则顺序尝试下一个
+      function tryListen(port) {
+          const net = require('net');
+
+          if (attempts >= maxAttempts) {
+              return reject(new Error('无法找到可用端口'));
+          }
+          attempts++;
+          const server = net.createServer();
+          server.listen(port, () => {
+              server.once('close', () => resolve(port));
+              server.close();
+          });
+          server.on('error', () => {
+              const nextPort = startPort + (port - startPort + 1) % range;
+              tryListen(nextPort);
+          });
+      }
+      tryListen(startingPort);
+  });
+}
 async function module_exports(opts){
   var {WebSocket,pattern, init, url, expression, port, host, debug=false, reload=0} = opts || {}
   // NOTE: pattern is also key.
@@ -160,4 +188,85 @@ async function module_exports(opts){
   return ({exec,raw})
 }
 
+  let spawn_cdp = async(cdp_port,proxy_server='http://127.0.0.1:7777')=>{
+      if (!cdp_port) {
+        cdp_port = await findFreePort();
+      }else{
+
+//TODO 可以重复listen???
+let test=await new Promise((resolve,reject)=>{
+            const net = require('net');
+            const server = net.createServer();
+        server.once('listening', () => {
+            server.close(() => {
+                resolve(`Port ${cdp_port} is available.`);
+            });
+        });
+
+        server.once('error', (error) => {
+            if (error.code === 'EADDRINUSE') {
+                reject(new Error(`Port ${cdp_port} is already in use.`));
+            } else {
+                reject(new Error(`Error checking port ${cdp_port}: ${error.message}`));
+            }
+        });
+        server.listen(cdp_port);
+//            server.listen(cdp_port, () => {
+//                server.once('close', () => resolve(cdp_port));
+//                server.close();
+//            });
+//            server.on('error',(ex) => { reject(ex) });
+        });
+console.error('test=',test);
+
+      }
+      const { spawn } = require('child_process');
+      const path = require('path');
+      const os = require('os');
+      const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+      //TODO "%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe" 
+
+      //TODO custom userDataDir...
+      const userDataDir = path.join(os.tmpdir(), 'cdp'+cdp_port +'_'+ new Date().toISOString().slice(0,10).replace(/-/g, ''));
+
+      const args = [
+          '--test-type',
+          '--disable-web-security',
+          `--user-data-dir=${userDataDir}`,
+          '--remote-debugging-port='+cdp_port,
+          '--remote-allow-origins=*',
+          '--disable-features=Translate',
+          '--no-first-run',
+          //'--auto-open-devtools-for-tabs',//TODO
+          //`file://${path.join(process.cwd(), 'cdp_backend.html')}` // 使用当前工作目录下的 cdp_backend.html 文件
+      ];
+      if (proxy_server) {
+        args.push(`--proxy-server=${proxy_server}`);
+        args.push('--host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE 127.0.0.1"');
+      }
+      // TODO headless
+      const child = spawn(edgePath, args);
+      return [child.pid, cdp_port, userDataDir];
+  }
+
+module_exports.spawn_cdp = spawn_cdp;
+
 export default module_exports
+
+//TODO
+//var bizcdp1 = (expression,reload) => bizcdp({WebSocket,pattern:web_entry+'/zh-hans/balance/analysis',reload,expression,debug:true});
+//var bizcdp1 = (expression,reload) => bizcdp({WebSocket,pattern:'https://api.ipify.org/',reload,expression,debug:true});
+//await (await bizcdp1(null,3333)).raw('Memory.getDOMCounters')
+//  if(!token || force) token=await (await bizcdp1()).exec('localStorage["token"]')
+//var s = await (await bizcdp1(null,3333)).exec(`(document.querySelector('.main .est .value')||{}).innerText`)
+//var bizcdp = require('./bizcdp')
+//return await bizcdp({WebSocket:require('ws'),pattern:u,expression:`document.body.innerText`,reload:1234,debug:false})
+//  var rt = s2o(await history_s(id,interval,pointscount,reload))
+
+/*
+bizcdp = require('./bizcdp')//when node
+var bizcdp = (await import('./bizcdp.mjs')).default;//or..
+await bizcdp.spawn_cdp(9222);
+var biz=(await bizcdp({port:9222,WebSocket:require('ws'),pattern:'https://api.ipify.org/',reload:1234,debug:false}))
+await biz.exec(`document.body.innerText`)
+*/

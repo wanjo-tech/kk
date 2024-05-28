@@ -4,21 +4,17 @@
 //node server /app=default /port=8000 /fwd=1
 //node server /app=default /port=8001 /static_local=../docs /static=static/
 
+let logger = console;
+
 const globalThisWtf = {};
 for(let k of [...Object.keys(globalThis),'require','process']){
   globalThisWtf[k] = globalThis[k];
-  //console.log(k,typeof globalThis[k]);
   delete globalThis[k];
 }
-//console.log(Object.keys(globalThisWtf));
 
 globalThisWtf.require = require;
 let process = globalThisWtf.process;//require('process');
-let main_pid = process.pid;
-console.log('process.pid',process.pid);
-
-//console.log('globalThisWtf.require',typeof globalThisWtf.require);
-//delete require;
+let process_pid = process.pid;
 
 ////global locking of __proto__... once for all...
 //Object.defineProperty(Object.prototype, '__proto__', { get() { return undefined; }, set(newValue) { } });
@@ -34,25 +30,13 @@ const mimeTypes = {
   '.jpg': 'image/jpeg',
   '.ico': 'image/png',//TMP
 };
-process.on('SIGTERM', () => {
-  console.log('SIGTERM')
-})
+//process.on('SIGINT', () => { logger.log('SIGINT') process.exit() });
+process.on('SIGTERM', () => { logger.log('SIGTERM') })
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('WARNING unhandledRejection', promise, 'reason:', reason);
-});
+process.on('unhandledRejection',(reason,promise)=>{logger.error('!!! unhandledRejection',promise,'reason:',reason);});
+process.on('uncaughtException',(error)=>{logger.log('!!!!! uncaughtexception:',error);});
 
-//process.on('SIGINT', () => { console.log('SIGINT') process.exit() });
-
-process.on('uncaughtException', (error) => {
-  console.log('Uncaught exception:', error);
-});
-
-process.on('uncaughtException', (error) => {
-  console.log('Uncaught exception:', error);
-});
-
-const server = http.createServer(async(req, res) => {
+const createServer = ()=> http.createServer(async(req, res) => {
     var headers = {
       'Content-Type':'application/json;charset=utf-8',
       "Access-Control-Allow-Origin":"*",
@@ -98,10 +82,10 @@ const server = http.createServer(async(req, res) => {
               const contentType = mimeTypes[ext] || 'application/octet-stream';
               headers['Content-Type'] = contentType;
               rt = fs.readFileSync(staticFilePath)
-            } //else console.log('skip non file',relativePath)
-          }//else console.log('fallback to app',relativePath);//let app handle
-        }//else console.log('fallback to app for',relativePath);//for static!=''
-        //console.log('DEBUG tryStaticFile',relativePath,typeof rt);
+            } //else logger.log('skip non file',relativePath)
+          }//else logger.log('fallback to app',relativePath);//let app handle
+        }//else logger.log('fallback to app for',relativePath);//for static!=''
+        //logger.log('DEBUG tryStaticFile',relativePath,typeof rt);
         return rt;
       };
       if ( (argo.static || argo.static_local) && (req.method == 'GET')) {
@@ -119,8 +103,8 @@ const server = http.createServer(async(req, res) => {
       //TODO in future, fix the bugs of the loop..
       let referer=reqHeaders.referer;
       if (argo.fwd && referer && !isValidUrl(url)){
-        let referer_o = urlModule.parse(referer)
-        let referer_path = referer_o.path
+        let referer_o = urlModule.parse(referer) || {};
+        let referer_path = referer_o.path || '';
         if (referer_path.startsWith('/http') && referer_o.host!=reqHOST){
           //url = `${referer_path.substring(1)}/${url}`
           url = `${referer_path.substring(1)}${url}`
@@ -131,10 +115,8 @@ const server = http.createServer(async(req, res) => {
       if (!isValidUrl(url)){
         if (!body) body = decodeURI(urlModule.parse(url).query||'')
         let app_id = (argo.app||'default');
-        //return await require('./app'+app_id)({...Application,...{req,res, url,body,argo,app_id,reqHOST,reqPORT,globalThisWtf,main_pid}})
-        var {data} = await myfetch('worker://./app'+app_id,{url,body,headers,argo,timeout:2999});
-console.log('debug data',data);
-        return fastReturn({data})
+        var {data,statusCode,headers} = await require('./app'+app_id)({...Application,...{req,res, url,body,argo,app_id,reqHOST,reqPORT,globalThisWtf,process_pid}});
+        return fastReturn({data,statusCode,headers})
       }
 
       //////////////////// fwd 
@@ -161,9 +143,9 @@ console.log('debug data',data);
       if (headers_set_cookie.length>0){
         headers['set-cookie'] = headers_set_cookie
       }
-      console.log(statusCode,url)
+      logger.log(statusCode,url)
     } catch (error) {
-        console.error('ERR',url,statusCode,headers,'=>',error);
+        logger.error('ERR',url,statusCode,headers,'=>',error);
         const msg = (''+error).split('\n')[0]; // Get the first line only
         const code = (error||{}).code
         data = o2s({msg,code})
@@ -175,48 +157,47 @@ console.log('debug data',data);
     return fastReturn({statusCode,headers,data})
 });
 
-//server.listen(argo.port||80,argo.host||'127.0.0.1',()=>console.log('Server started',{app:(argo.app||'default'),...server.address()}));
-
-let cpus = argo.cpus || require('os').cpus().length;
+let cpus = argo.cpus || require('os').cpus().length;//require('node:os').availableParallelism()
 let cluster_mode = "solo";
 if(cpus>1){ // start cluster mode when not solo
   cluster_mode = "cluster"
   let cluster = require('cluster');
-  let logger = console;
-  //let WorkerPool = {}
-  if (cluster.isMaster) {//split since here.
+  //if (cluster.isMaster)
+  if (cluster.isPrimary)
+  {//split.
           let forkWorker = (fk_idx) => {
-                  const worker = cluster.fork({fk_idx,pid:process.pid});
-                  logger.log('forkWorker',fk_idx);
-                  worker.on('disconnect', () => {
-                          logger.log(`worker${fk_idx} disconnect, will auto launch again...`);
+                  const workerServer = cluster.fork({fk_idx,main_pid:process.pid});//NOTES: fork(env)
+                  //logger.error('forkWorker',fk_idx);
+                  workerServer.on('disconnect', () => {
+                          logger.error(`workerServer${fk_idx} disconnect, will auto launch again...`);
                           forkWorker(fk_idx);
                   })
-                  //.on('message',msgInfo=>process_on_message(msgInfo,4))
-                  .on('listening', (address) => logger.log(`worker${fk_idx} is listening: `,address))
-                  .on('online',()=>{
-                          logger.log(`NOTICE worker${fk_idx} is online`,);
-                          //WorkerPool[worker.process.pid]=worker;//
-                  }).on('exit', (code, signal) => {
-                          //delete WorkerPool[worker.process.pid];
-                          if (signal) { logger.log(`worker${fk_idx} was killed by signal: ${signal}`); }
-                          else if (code !== 0) { logger.log(`worker${fk_idx} exited with error code: ${code}`); }
-                          else { logger.log(`worker${fk_idx} exit success ${code},${signal}`); }
+                  //.on('message',msgInfo=>process_on_message(msgInfo,4))//TODO
+                  //.on('listening', (address) => logger.error(`workerServer${fk_idx} is listening: `,address))
+                  //.on('online',()=>{
+                  //        //logger.error(`NOTICE workerServer${fk_idx} is online`,);
+                  //})
+                  .on('exit', (code, signal) => {
+                          if (signal) { logger.error(`workerServer${fk_idx} was killed by signal: ${signal}`); }
+                          else if (code !== 0) { logger.error(`workerServer${fk_idx} exited with error code: ${code}`); }
+                          else { logger.error(`workerServer${fk_idx} exit success ${code},${signal}`); }
                   });
           };
-          cluster.on('exit', (worker, code, signal)=>{
-          	logger.log('worker %d died (%s). restarting...', worker.process.pid, signal || code);
+          cluster.on('exit', (workerServer, code, signal)=>{
+          	logger.error('workerServer %d exit (%s). restarting...', workerServer.process.pid, signal || code);
           	//cluster.fork();
-                forkWorker( worker.fk_idx );
-          	//logger.log('[REFORK] Server');
+                forkWorker(workerServer.fk_idx);
+          	//logger.error('[REFORK] Server');
           });
-          //for (let i = 1; i < cpus; i++)
-          for(let j=cpus;j--;) forkWorker(1+j);
-
-          //setTimeout(()=>{ logger.log('DEBUG:',ProcPool,Object.keys(WorkerPool)); },3333);
-  }else{
-      server.listen(argo.port||80,argo.host||'127.0.0.1',()=>console.log('Server started',{app:(argo.app||'default'),...server.address()}));
+          for (let j=0; j<cpus;j++) forkWorker(1+j)
+  }else{ //child
+    let fk_idx = process.env.fk_idx;
+    let main_pid = process.env.main_pid;
+    let process_pid = process.pid;
+    let server = createServer();
+    server.listen(argo.port||80,argo.host||'127.0.0.1',()=>logger.error(`Server_${fk_idx}_${main_pid}_${process_pid}`,{app:(argo.app||'default'),...server.address()}));
   }
 }else{
-  server.listen(argo.port||80,argo.host||'127.0.0.1',()=>console.log('Server started',{app:(argo.app||'default'),...server.address()}));
+  let server = createServer();
+  server.listen(argo.port||80,argo.host||'127.0.0.1',()=>logger.log('Server started',{app:(argo.app||'default'),...server.address()}));
 }

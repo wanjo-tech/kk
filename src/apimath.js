@@ -11,7 +11,7 @@ let bizmath;
 
 let module_exports = async(Application={})=>{
   if (!bizmath) bizmath = await tryImport('../docs/bizmath.mjs?'+init_time,'default',console.log) //(await import('./bizmath.mjs?'+init_time)).default;
-  console.log('bizmath',bizmath);
+  //console.log('debug bizmath',bizmath);
   return bizmath
 };
 module.exports = module_exports

@@ -26,7 +26,7 @@ MathX.tmp = async function() {
   console.error('test async MathX.tmp');
   let rt = await Math.random();
   //let rt = Math.random();//
-  console.error('test async MathX.tmp rt',rt);
+  //console.error('debug async MathX.tmp rt',rt);
   return rt;
 };
 MathX.tmp2 = function() {
@@ -34,7 +34,7 @@ MathX.tmp2 = function() {
   //let rt = await Math.random();
   //let rt = Math.random();//
   let rt = (async()=>Math.random())();
-  console.error('test async MathX.tmp2 rt',rt);
+  //console.error('debug async MathX.tmp2 rt',rt);
   return rt;
 };
 MathX.tmp3 = async function() {
@@ -42,10 +42,9 @@ MathX.tmp3 = async function() {
   //let rt = await Math.random();
   //let rt = Math.random();//
   let rt = await (async()=>Math.random())();
-  console.error('test async MathX.tmp3 rt',rt);
+  //console.error('debug async MathX.tmp3 rt',rt);
   return rt;
 };
-
 
 MathX.abs = function(value) {
   if (value instanceof MathX.Tensor) {

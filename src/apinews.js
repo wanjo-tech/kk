@@ -95,7 +95,7 @@ var latest_a = async()=>{
 }
 
 // e.g.
-//curl -X POST http://127.0.0.1 -d "news.headline_a()"
+//curl -X POST http://127.0.0.1 -d "news.headline_a"
 
 module.exports = {
     init_time,
