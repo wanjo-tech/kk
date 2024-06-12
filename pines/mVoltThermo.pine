@@ -1,0 +1,132 @@
+//@version=5
+indicator("MultiVolatility", shorttitle="MultiVolatility")
+var int timealigned_imax = 4999
+TimeAligned(int hr, series float prz_a, series float vol_a, series float time_a, series float amt_a) =>
+    //float[] v_ta = array.new_float() //vlta + time (dev)
+    float[] vlta = array.new_float() //stdev(logDiff) for sharpe/CoV
+    float[] lnra = array.new_float() //
+    float sumTime = 0
+    float sumVol = 0.0
+    float sumAmt = 0.0
+    float sumAbsPrz = 0.0
+    float sumAbsPrzLog = 0.0
+    float sumPrz = 0.0
+    float sumPrzLog = 0.0
+    int i = 0
+    float prevPrz = 0.0
+    float przLogDiff = 0.0
+    float przLog = 0.0
+    float timeDiff = 0.0
+    while i < timealigned_imax and sumTime < hr * 3600
+        float prz_a_i = prz_a[i]
+        float time_a_i = time_a[i]
+        float time_a_i_prev = time_a[i+1]
+        timeDiff := nz(time_a_i - time_a_i_prev, 0)
+        float vol_a_i = vol_a[i]
+        float amt_a_i = amt_a[i]
+        przLog := math.log(prz_a_i) // Log Price
+        if prevPrz > 0.0
+            przLogDiff := przLog - math.log(prevPrz)
+            sumAbsPrzLog += math.abs(przLogDiff)
+            sumAbsPrz += math.abs(prevPrz - prz_a_i)
+            array.push(vlta, przLogDiff)
+            //array.push(v_ta, przLogDiff/math.sqrt(timeDiff))//没啥用，还搞复杂了...
+        array.push(lnra, przLog)
+        //array.push(lnpa, prz_a_i)
+        sumTime := sumTime + timeDiff // for Time Alignment
+        sumVol := sumVol + nz(vol_a_i, 0)
+        sumAmt := sumAmt + nz(amt_a_i, 0)
+        prevPrz := prz_a_i
+        i := i + 1
+    if i > 0
+        float prz_a_0 = prz_a[0]
+        sumPrz := prevPrz - prz_a_0
+        sumPrzLog := math.log(prevPrz) - math.log(prz_a_0)
+    //[hr, i, sumPrz, sumAbsPrz, sumPrzLog, sumAbsPrzLog, sumVol, sumAmt, sumTime, array.stdev(vlta), array.stdev(lnra)]
+    //[hr, i, sumPrz, sumAbsPrz, sumPrzLog, sumAbsPrzLog, sumVol, sumAmt, sumTime, array.stdev(vlta), array.stdev(lnra),array.stdev(lnpa)]
+    [hr, i, sumPrz, sumAbsPrz, sumPrzLog, sumAbsPrzLog, sumVol, sumAmt, sumTime, array.variance(vlta), array.variance(lnra)]
+VarTimeAligned(int hr, series float prz_a, series float vol_a, series float time_a, series float amt_a) =>
+    [hrx,i,sumPrz,sumAbsPrz,sumPrzLog,sumAbsPrzLog,sumVol,sumAmt,sumTime,var_vlta,var_lnra]=TimeAligned(hr,prz_a,vol_a,time_a,amt_a)
+    [var_vlta,var_lnra]
+StdTimeAligned(int hr, series float prz_a, series float vol_a, series float time_a, series float amt_a) =>
+    [var_vlta,var_lnra]=VarTimeAligned(hr,prz_a,vol_a,time_a,amt_a)
+    [math.sqrt(var_vlta),math.sqrt(var_lnra)]
+
+//sourceLongInput = input.source(low, "Enter Long after crossing")
+SP2PVTA(sym,period)=>request.security(sym,period,[close,volume,time/1000, close*volume])
+symbol0 = syminfo.tickerid
+[prz0a_d,vol0a_d,time0a_d,amt0a_d] = SP2PVTA(symbol0,'D')
+[prz0a_15m,vol0a_15m,time0a_15m,amt0a_15m] = SP2PVTA(symbol0,'15')
+
+bs365=100*math.sqrt(365)
+bs252=100*math.sqrt(252)
+
+[vlt7d,lnr7d] = StdTimeAligned(24*7,prz0a_15m,vol0a_15m,time0a_15m,amt0a_15m)
+//plot(bs365*vlt7d,color=color.black,linewidth=2)
+//plot(bs365*vlt7d,color=color.blue,linewidth=1)
+[vlt49d,lnr49d] = StdTimeAligned(24*49,prz0a_15m,vol0a_15m,time0a_15m,amt0a_15m)
+//plot(bs365*vlt49d,color=color.red,linewidth=1)
+[vlt2d,lnr2d] = StdTimeAligned(24*2,prz0a_15m,vol0a_15m,time0a_15m,amt0a_15m)
+
+
+// 计算标准化对数收益率
+vol2d = bs365 * (lnr2d / math.sqrt(2))
+vol7d = bs365 * (lnr7d / math.sqrt(7))
+vol49d = bs365 * (lnr49d / math.sqrt(49))
+
+// 动态颜色设置函数
+get_color(value) =>
+    // 定义颜色范围
+    start_color = color.new(#00FF00, 0)  // 绿色
+    mid_color1 = color.new(#FFFF00, 0)   // 黄色
+    mid_color2 = color.new(#FFA500, 0)   // 橙色
+    mid_color3 = color.new(#FF0000, 0)   // 红色
+    end_color = color.new(#800080, 0)    // 紫色
+
+    // 映射值到 0-1 的范围
+    min_value = 4.0
+    max_value = 24.0
+    clamped_value = math.max(min_value, math.min(max_value, value))
+    t = (clamped_value - min_value) / (max_value - min_value)
+
+    // 预声明 r, g, b
+    float r = 0.0
+    float g = 0.0
+    float b = 0.0
+
+    // 线性插值计算颜色
+    if t < 0.25
+        r := color.r(start_color) * (1 - t / 0.25) + color.r(mid_color1) * (t / 0.25)
+        g := color.g(start_color) * (1 - t / 0.25) + color.g(mid_color1) * (t / 0.25)
+        b := color.b(start_color) * (1 - t / 0.25) + color.b(mid_color1) * (t / 0.25)
+    else if t < 0.5
+        t := (t - 0.25) / 0.25
+        r := color.r(mid_color1) * (1 - t) + color.r(mid_color2) * t
+        g := color.g(mid_color1) * (1 - t) + color.g(mid_color2) * t
+        b := color.b(mid_color1) * (1 - t) + color.b(mid_color2) * t
+    else if t < 0.75
+        t := (t - 0.5) / 0.25
+        r := color.r(mid_color2) * (1 - t) + color.r(mid_color3) * t
+        g := color.g(mid_color2) * (1 - t) + color.g(mid_color3) * t
+        b := color.b(mid_color2) * (1 - t) + color.b(mid_color3) * t
+    else
+        t := (t - 0.75) / 0.25
+        r := color.r(mid_color3) * (1 - t) + color.r(end_color) * t
+        g := color.g(mid_color3) * (1 - t) + color.g(end_color) * t
+        b := color.b(mid_color3) * (1 - t) + color.b(end_color) * t
+
+    color.new(color.rgb(r, g, b), 80)
+
+//stdev(logPrzDiff)
+plot(5*math.log(2), color=get_color(bs365*vlt2d), linewidth=1, style=plot.style_area)
+plot(5*math.log(7), color=get_color(bs365*vlt7d), linewidth=1, style=plot.style_area)
+plot(5*math.log(49), color=get_color(bs365*vlt49d), linewidth=1, style=plot.style_area)
+
+//stdev(logPrz)
+plot(-5*math.log(2), color=get_color(vol2d), linewidth=1, style=plot.style_area)
+plot(-5*math.log(7), color=get_color(vol7d), linewidth=1, style=plot.style_area)
+plot(-5*math.log(49), color=get_color(vol49d), linewidth=1, style=plot.style_area)
+
+
+
+

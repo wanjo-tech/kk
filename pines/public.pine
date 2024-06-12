@@ -28,8 +28,10 @@ export TimeAligned(int hr, series float prz_a, series float vol_a, series float 
             przLogDiff := przLog - math.log(prevPrz)
             sumAbsPrzLog += math.abs(przLogDiff)
             sumAbsPrz += math.abs(prevPrz - prz_a_i)
-            array.push(vlta, przLogDiff)
-        array.push(lnra, przLog) // for LogReturn std, related to sharpe ratio and CoV too.
+            array.push(vlta, przLogDiff) //for sharpe/CoV
+        array.push(lnra, przLog)
+        // 价格数据的分布特性和绝对波动性
+        //array.push(lnpa, prz_a_i)
         sumTime := sumTime + math.abs(nz(time_a_i - time_a_i_prev, 0)) // for Time Alignment
         sumVol := sumVol + nz(vol_a_i, 0)
         sumAmt := sumAmt + nz(amt_a_i, 0)
@@ -40,7 +42,9 @@ export TimeAligned(int hr, series float prz_a, series float vol_a, series float 
         sumPrz := prevPrz - prz_a_0
         sumPrzLog := math.log(prevPrz) - math.log(prz_a_0)
     [hr, i, sumPrz, sumAbsPrz, sumPrzLog, sumAbsPrzLog, sumVol, sumAmt, sumTime, array.stdev(vlta), array.stdev(lnra)]
+    //[hr, i, sumPrz, sumAbsPrz, sumPrzLog, sumAbsPrzLog, sumVol, sumAmt, sumTime, array.stdev(vlta), array.stdev(lnra),array.stdev(lnpa)]
 
+//array.variance()
 //
 export StdTimeAligned(int hr, series float prz_a, series float vol_a, series float time_a, series float amt_a) =>
     [hrx,i,sumPrz,sumAbsPrz,sumPrzLog,sumAbsPrzLog,sumVol,sumAmt,sumTime,std_vlta,std_lnra]=TimeAligned(hr,prz_a,vol_a,time_a,amt_a)

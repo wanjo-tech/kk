@@ -30,7 +30,7 @@ plot(bs365*vlt20d,color=color.blue,linewidth = 2)
 [vlt7d,lnr7d] = public.StdTimeAligned(24*7,prz0a_15m,vol0a_15m,time0a_15m,amt0a_15m)
 plot(bs365*vlt7d,color=color.black,linewidth = 2) 
 
-//测试对时x天年化收益标准差，跟为跟差分数量级不一样，放在另一个副图；
+//测试对时x天年化收益标准差，跟差分数量级不一样，放在另一个副图；
 // plot(bs365*lnr20d/20,color=color.orange)
 // plot(bs365*lnr7d/7,color=color.purple)
 
