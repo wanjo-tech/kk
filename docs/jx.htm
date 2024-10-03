@@ -10,7 +10,7 @@
 <h3>DEBUG=[...document.querySelectorAll('[j-warn]')].map(console.log)</h3>
 <script src='jx.js'></script>
 <hr/>
-<button class="mycss-button" onclick='Build()'>Build</button>
+<button class="mycss-button" onclick='Build()'>_Build</button>
 <button class="mycss-button" onclick='Render()'>Render</button> tpl test=&nbsp;
 <a href='javascript:testIf()'>j-if</a>&nbsp;
 <a href='javascript:testFor()'>j-for</a>&nbsp;
@@ -51,6 +51,7 @@ thisDate={{thisDate}}
 
 <textarea class="mycss-textarea" id='tplStage' style="min-height:100px" oldstyle="border:1px solid;min-width:640px;min-height:150px" spellcheck="false">
 <br/>test @change <input @change='console.log(event.target.value)' value='abcd'/>
+<br/>test @click <input type=button @click='console.log(event,this)' value='click'/>
 <h3>thisDate={{thisDate}}</h3>
 <div j-for="val,key,idx in wtf"><li>{{ idx+","+key+":"+val }}</li></div>
 <font>OK {{ new Date() }}</font>
@@ -92,6 +93,8 @@ test j-text:
 var {s2bdy,s2frg,frg2s,jxTryEval,jxRender,jxMon,_jxBuild,_jxUpsert,s2el,s2o,o2s}=jx()
 var now = () => new Date().getTime()/1000;
 var gData = {}
+
+//test _jxBuild only, not render ;)
 function Build(){
   var data_s = stageData.value
   console.log('data_s',data_s)
